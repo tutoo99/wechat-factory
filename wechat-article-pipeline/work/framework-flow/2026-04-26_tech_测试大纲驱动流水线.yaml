@@ -1,0 +1,129 @@
+created_at: '2026-04-26T19:12:55.845852'
+channel: tech
+channel_display_name: 技术号
+lane: tech
+topic: 测试大纲驱动流水线
+goals:
+- click
+- save
+material_types:
+- case
+- opinion
+material_depth: medium
+persona:
+  id: tech
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-tech.yaml
+framework:
+  id: tech_case_to_method
+  name: 案例抽象型
+  summary: 适合从一个具体案例，往上提炼成可复用方法。
+  hook_pattern: 先给具体案例，再强调“这次真正有价值的不是结果，而是背后的方法”。
+  section_flow:
+  - 具体案例发生了什么
+  - 为什么不能只看表面
+  - 抽象出哪条方法
+  - 以后怎么复用
+  ending_pattern: 收束成一条通用方法论或判断标准。
+  constraints:
+  - 不要过早上价值
+  - 抽象时要回扣案例
+  required_materials:
+  - 一个完整案例
+  - 至少一条抽象原则
+  - 可复用的判断标准或步骤
+supplemental_materials: ''
+auto_materials: []
+next_step: 按这份 brief 开始写正文初稿
+outline:
+  version: 1
+  topic: 测试大纲驱动流水线
+  thesis: 文章质量不只靠素材数量，而靠写作前是否先把每节要证明的判断想清楚。
+  source_path: /tmp/test_outline.yaml
+  sections:
+  - index: 1
+    title: 先跑通一次，问题才会露出来
+    function: hook
+    reader_question: 为什么原来的流水线写出来会散？
+    core_viewpoint: 一次性把素材塞给模型，最容易让正文变成素材复述。
+    evidence_need: story
+    supporting_angles:
+    - story
+    - mistake
+    transition_to_next: 问题不在素材本身，而在素材进入正文前没有结构位置。
+    materials: []
+  - index: 2
+    title: 大纲不是形式，是提前做判断
+    function: insight
+    reader_question: 为什么多一步大纲能提升质量？
+    core_viewpoint: 大纲真正约束的是每节要证明什么，而不是小标题长什么样。
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    - method
+    transition_to_next: 有了判断，素材召回才能从全文级变成段落级。
+    materials: []
+  - index: 3
+    title: 按节召回，素材才不会乱入
+    function: method
+    reader_question: 素材应该怎么进入正文？
+    core_viewpoint: 素材应该服务当前 section 的观点，而不是被模型按顺序消化。
+    evidence_need: method
+    supporting_angles:
+    - method
+    - cost
+    transition_to_next: 最后要把这套方式收束成可复用的流程边界。
+    materials: []
+  - index: 4
+    title: 脚本管编排，当前会话管判断
+    function: ending
+    reader_question: 这套方案以后怎么扩展？
+    core_viewpoint: 先把 LLM 判断留在当前会话，后续再替换成明确 API，工程边界会更稳。
+    evidence_need: turning_point
+    supporting_angles:
+    - turning_point
+    - method
+    transition_to_next: ''
+    materials: []
+theme_recommendation:
+  recommended_theme: tech-clean
+  article_subtype: case_to_method
+  features:
+    article_length: medium
+    contains_table: false
+    contains_code: true
+    emotional_density: low
+  candidates:
+  - theme_id: tech-clean
+    display_name: 技术简洁
+    score: 64
+    summary: 冷蓝灰调、代码高亮、编号分区，适合技术号
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 适合信息密度高、结构化强的技术长文
+  - theme_id: dense-note
+    display_name: 技术密记
+    score: 64
+    summary: 信息密度更高、留白更克制，适合收藏型技术笔记和复盘文
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 更适合“看完想收藏”的技术密记型内容
+  - theme_id: datawhale-minimal
+    display_name: Datawhale 极简黑白（粉底高亮）
+    score: 52
+    summary: 极简黑白灰底 + 粉色点缀，H3标题粉底高亮，文首深色引导区，适合技术社区/开源组织调性
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `long_read, opinion, emotional_story`
+    - 极简克制风格，适合技术社区、开源组织、活动报道、人物故事
+  recommended_from: brief

@@ -1,0 +1,57 @@
+colors:
+  primary: "#3b82f6"
+  secondary: "#1d4ed8"
+  accent: "#0ea5e9"
+  text: "#1f2937"
+  text_secondary: "#6b7280"
+  text_muted: "#94a3b8"
+  surface: "#ffffff"
+  surface_soft: "#f8fafc"
+  border: "#dbe3ef"
+  link: "#2563eb"
+  code_bg: "#0f172a"
+  code_inline_bg: "#e8eef9"
+  quote_bg: "#f8fafc"
+  highlight_bg: "#dbeafe"
+  heading_palette:
+    - "#1d4ed8"
+    - "#2563eb"
+    - "#0ea5e9"
+  code_text: "#e5edf8"
+  code_label: "#94a3b8"
+  inline_code_text: "#b91c1c"
+
+typography:
+  font_family: "'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,sans-serif"
+  body_size: 14
+  lead_size: 15
+  caption_size: 12
+  code_size: 12
+  line_height: 1.78
+  letter_spacing: 0.2
+  h2_size: 19
+  h3_size: 16
+  footnote_size: 12
+
+spacing:
+  content_padding_x: 6
+  paragraph_gap: 16
+  block_gap: 14
+  section_gap_top: 28
+  section_gap_bottom: 14
+  sub_section_gap_top: 20
+  sub_section_gap_bottom: 10
+  image_gap: 18
+
+radius:
+  sm: 3
+  md: 6
+  lg: 10
+
+border:
+  width_thin: 1
+  width_strong: 2
+
+shadow:
+  card: "none"
+  image: "none"

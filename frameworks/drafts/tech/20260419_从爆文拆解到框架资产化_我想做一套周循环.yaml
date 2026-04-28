@@ -1,0 +1,37 @@
+id: draft_tech_从爆文拆解到框架资产化_我想做一套周循环
+name: 待验证新框架草案
+lane: tech
+subtype: opinion_exploration
+priority: 50
+summary: 基于选题《从爆文拆解到框架资产化，我想做一套周循环》自动生成的新框架草案，待人工验证。
+suitable_topics:
+- 从爆文拆解到框架资产化，我想做一套周循环
+suitable_goals:
+- save
+material_types:
+- opinion
+material_depth:
+  min: light
+keywords:
+- 从爆文拆解到框架资产化
+- 我想做一套周循环
+required_materials:
+- 至少一个真实场景或案例
+- 一个明确转折点
+- 一条可收束的核心判断
+hook_pattern: 从这次选题里最反常的一点切入，再抛出反问。
+section_flow:
+- 开头判断
+- 案例支撑
+- 核心观点
+- 行动建议
+ending_pattern: 收束成一句可执行提醒，再留一个可复用判断。
+constraints:
+- 先验证 3-5 次，再决定是否升级成正式框架
+- 不要直接照抄来源爆文的标题和案例表达
+not_for:
+- 与当前素材形态完全不匹配的选题
+source:
+  channel: tech
+  topic: 从爆文拆解到框架资产化，我想做一套周循环
+  generated_at: '2026-04-19T03:22:03.256083'

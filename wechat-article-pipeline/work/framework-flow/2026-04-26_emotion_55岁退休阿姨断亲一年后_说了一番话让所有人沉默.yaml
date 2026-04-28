@@ -1,0 +1,142 @@
+created_at: '2026-04-26T22:24:10.103301'
+channel: emotion
+channel_display_name: 情感号
+lane: emotion
+topic: 55岁退休阿姨断亲一年后，说了一番话让所有人沉默
+goals:
+- click
+- share
+- read_finish
+material_types:
+- case
+- opinion
+material_depth: heavy
+persona:
+  id: auntie
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-auntie.yaml
+framework:
+  id: emotion_story_conflict_reveal
+  name: 故事冲突揭露型
+  summary: 适合“生活场景 -> 冲突升级 -> 真相暴露 -> 实在提醒”的情感号内容。
+  hook_pattern: 先给生活场景里的反常举动，再抛一句“我那天才看明白”。
+  section_flow:
+  - 表面冲突出现
+  - 情绪逐步升级
+  - 真正意图暴露
+  - 提炼成实在提醒
+  ending_pattern: 用“到这个岁数，该守住什么”这类实在话收尾。
+  constraints:
+  - 不要说教
+  - 不要金句过密
+  required_materials:
+  - 一个具体生活场景
+  - 一处冲突升级点
+  - 一个“原来如此”的揭露点
+supplemental_materials: ''
+auto_materials: []
+next_step: 按这份 brief 开始写正文初稿
+outline:
+  version: 1
+  topic: 55岁退休阿姨断亲一年后，说了一番话让所有人沉默
+  thesis: 断亲不是绝情，是中年以后最该学会的自我保护——那些消耗你的亲戚，不值得你用健康和心力去维系。
+  source_path: wechat-article-pipeline/work/framework-flow/2026-04-26_emotion_55岁退休阿姨断亲一年后_说了一番话让所有人沉默.outline.yaml
+  sections:
+  - index: 1
+    title: 01｜退休第一年，我把所有亲戚群都退了
+    function: hook
+    reader_question: 她为什么要退群？发生了什么事？
+    core_viewpoint: 退休后突然断亲，不是一时冲动，而是攒够了失望之后的清醒。
+    evidence_need: story
+    supporting_angles:
+    - story
+    - turning_point
+    transition_to_next: 亲戚们的反应，比断亲本身更让人心寒
+    materials: []
+  - index: 2
+    title: 02｜亲戚们的嘴，比刀子还快
+    function: story
+    reader_question: 亲戚们怎么说她？她怎么扛过来的？
+    core_viewpoint: 断亲之后最先跳出来的，往往不是关心你的人，而是少了你不行的人。
+    evidence_need: story
+    supporting_angles:
+    - story
+    - cost
+    transition_to_next: 可你们知道吗，这些年我都为他们做了什么
+    materials: []
+  - index: 3
+    title: 03｜那些年，我为这个家付出了多少
+    function: problem
+    reader_question: 她到底受了什么委屈？亲戚们做了什么过分的事？
+    core_viewpoint: 亲情里的不对等，不是一天形成的——总有人付出，总有人觉得理所当然。
+    evidence_need: story
+    supporting_angles:
+    - story
+    - mistake
+    - cost
+    transition_to_next: 断亲一年后，我终于想明白了一件事
+    materials: []
+  - index: 4
+    title: 04｜断亲一年，我反而活得更像自己了
+    function: insight
+    reader_question: 她这一年过得怎么样？后悔吗？
+    core_viewpoint: 远离消耗你的关系，不是失去，是给自己的后半生腾出空间。
+    evidence_need: story
+    supporting_angles:
+    - story
+    - turning_point
+    - insight
+    transition_to_next: 老姐妹们，到了咱们这个岁数，有些事真得想明白
+    materials: []
+  - index: 5
+    title: 05｜到了这个岁数，最该守住的是自己
+    function: ending
+    reader_question: 我能从她身上学到什么？我该怎么做？
+    core_viewpoint: 后半生最划算的投资，不是维系所有关系，而是只把心力留给值得的人。
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    transition_to_next: ''
+    materials: []
+theme_recommendation:
+  recommended_theme: emotion-warm
+  article_subtype: story_conflict_reveal
+  features:
+    article_length: long
+    contains_table: false
+    contains_code: false
+    emotional_density: high
+  candidates:
+  - theme_id: emotion-warm
+    display_name: 情感暖调（退休阿姨人设）
+    score: 72
+    summary: 暖橙渐变、大字号、亲切排版，适合中老年读者群
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish / share`
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 适合长段叙事、情绪递进和关系类表达
+  - theme_id: zhouzuoluo-clean
+    display_name: 粥左罗极简红字（纯文字利器）
+    score: 70
+    summary: 极简纯文字排版，无背景卡片无边框无分割线，靠红色强调句和字号层级制造节奏，适合干货长文/金句密集的观点文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish / share`
+    risks:
+    - 更适合 `opinion, emotional_story, long_read`
+    - 纯文字利器，最适合金句密集、观点密集的干货长文
+  - theme_id: magazine-soft
+    display_name: 杂志柔感
+    score: 66
+    summary: 更像生活杂志的柔和分节和面状标题，适合情绪文、观点文、关系文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish / share`
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 更适合“像专栏而不是像教程”的排版气质
+  recommended_from: brief

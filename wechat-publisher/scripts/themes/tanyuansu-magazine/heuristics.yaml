@@ -1,0 +1,35 @@
+prefer:
+  lane:
+    - emotion
+  article_subtype:
+    - opinion
+    - growth
+    - emotional_story
+    - long_read
+  goals:
+    - read_finish
+    - share
+  content_features:
+    emotional_density: medium
+    image_heavy: true
+    narrative_flow: true
+
+avoid:
+  lane:
+    - tech
+  article_subtype:
+    - mistake_breakdown
+    - tool_review
+  content_features:
+    contains_code: true
+    contains_table: true
+    contains_heavy_code: true
+
+notes:
+  - 杂志感图文混排，最适合有配图的人物故事/成长类/观点类深度长文
+  - Optima衬线字体+大行高大字间距是核心识别，营造"纸质杂志"质感
+  - 如果文章没有配图或配图很少，效果会大打折扣
+  - 彩色圆点分隔符是独特视觉签名，但不宜过度使用（一篇文章2-3处）
+  - 橙色CTA条适合有明确行动号召的文章（课程/社群/活动）
+  - 技术文/代码密集文章请优先使用 tech-clean 或 datawhale-minimal
+  - 15px字号+大行高适合沉浸阅读，但不适合快速扫读的信息密度型文章

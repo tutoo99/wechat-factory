@@ -1,0 +1,103 @@
+body_text:
+  enabled: true
+  variant: magazine-flow
+  font_size: 15
+  line_height: 2.0
+  letter_spacing: 3
+  align: justify
+  font_family: "Optima-Regular, PingFangTC-light"
+  description: 杂志感正文，大行高大字间距，宽松阅读体验
+
+lead_text:
+  enabled: true
+  variant: same-as-body
+  font_size: 15
+  description: 导语与正文同风格，靠内容本身吸引
+
+section_title:
+  enabled: true
+  variant: image-number
+  font_size: 42
+  color: "#3E3E3E"
+  description: 大号章节编号(01/02/03)，建议用图片渲染以保持视觉一致性
+
+sub_title:
+  enabled: true
+  variant: bold-inline
+  font_size: 20
+  font_weight: bold
+  color: "#3E3E3E"
+  description: 子标题加粗，融入段落流中
+
+accent_text:
+  enabled: true
+  variant: orange-highlight
+  color: "#FF8124"
+  letter_spacing: 0.5
+  description: 橙色强调关键句，用于CTA引导
+
+quote_card:
+  enabled: false
+  variant: none
+  note: 原文不使用引用卡片
+
+checklist:
+  enabled: true
+  variant: plain-list
+  description: 清单纯文字排列
+
+step_list:
+  enabled: true
+  variant: numbered-image
+  description: 步骤编号建议用图片渲染
+
+code_panel:
+  enabled: false
+  variant: none
+  note: 原文无代码块
+
+data_table:
+  enabled: false
+  variant: none
+  note: 原文无表格
+
+image_block:
+  enabled: true
+  variant: float-wrap
+  width: 100%
+  border_radius: 0
+  description: 图文环绕布局，图片参与排版节奏而非独立卡片
+
+divider:
+  enabled: true
+  variant: colored-dots
+  dot_colors:
+    - "#F98888"
+    - "#FFDE6E"
+    - "#B3D7B1"
+  dot_size: 10
+  dot_radius: 100%
+  description: 彩色圆点作为视觉分隔/进度指示，是核心视觉签名
+
+cta_bar:
+  enabled: true
+  variant: orange-flex
+  background: "#FF8124"
+  color: "#FFFFFF"
+  font_size: 12
+  padding_x: 10
+  description: 橙色CTA横条，用于行动号召/报名引导
+
+attribution:
+  enabled: true
+  variant: right-aligned
+  font_size: 12
+  text_align: right
+  color: "#FFFFFF"
+  background: "#252525"
+  description: 右对齐署名，白字深底
+
+summary_box:
+  enabled: false
+  variant: none
+  note: 原文不使用总结卡片

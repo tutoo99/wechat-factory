@@ -1,0 +1,71 @@
+colors:
+  primary: "#3E3E3E"
+  secondary: "#443A31"
+  accent: "#FF8124"
+  text: "#3E3E3E"
+  text_secondary: "#5E5E5E"
+  text_muted: "#B3B3B3"
+  surface: "#FFFFFF"
+  surface_soft: "#FAF0E7"
+  border: "#E0B684"
+  link: "#0052FF"
+  code_bg: "#FAF0E7"
+  code_inline_bg: "#FAF0E7"
+  quote_bg: "#FAF0E7"
+  highlight_bg: "#FAF0E7"
+  heading_palette:
+    - "#3E3E3E"
+    - "#443A31"
+    - "#FF8124"
+  code_text: "#3E3E3E"
+  code_label: "#B3B3B3"
+  inline_code_text: "#FF8124"
+  orange_accent: "#FF8124"
+  gold_accent: "#FFA900"
+  yellow_accent: "#FFDE6E"
+  cream_bg: "#FAF0E7"
+  dark_bg: "#252525"
+  dark_text: "#FFFFFF"
+  coral_dot: "#F98888"
+  yellow_dot: "#FFDE6E"
+  sage_dot: "#B3D7B1"
+
+typography:
+  font_family: "Optima-Regular, PingFangTC-light, PingFang SC, system-ui, -apple-system, BlinkMacSystemFont, Helvetica Neue, Hiragino Sans GB, Microsoft YaHei UI, Microsoft YaHei, Arial, sans-serif"
+  body_size: 15
+  lead_size: 15
+  caption_size: 12
+  code_size: 13
+  line_height: 2.0
+  letter_spacing: 3
+  letter_spacing_tight: 0.5
+  h2_size: 42
+  h3_size: 20
+  h4_size: 17
+  footnote_size: 12
+  font_weight_heading: bold
+  font_weight_body: 400
+  text_align: justify
+
+spacing:
+  content_padding_x: 12
+  paragraph_gap: 0
+  block_gap: 10
+  section_gap_top: 10
+  section_gap_bottom: 10
+  sub_section_gap_top: 10
+  sub_section_gap_bottom: 10
+  image_gap: 10
+
+radius:
+  sm: 2
+  md: 8
+  lg: 12
+
+border:
+  width_thin: 0
+  width_strong: 0
+
+shadow:
+  card: "none"
+  image: "none"

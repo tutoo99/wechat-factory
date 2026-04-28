@@ -1,0 +1,42 @@
+id: emotion_warning_realization
+name: 提醒醒悟型
+lane: emotion
+subtype: warning_realization
+priority: 86
+summary: 适合“一个生活现象 -> 一个判断 -> 一个提醒”的晚年感悟文。
+suitable_topics:
+  - 存钱过日子
+  - 晚年处世
+  - 子女来往
+  - 老伴消费习惯
+suitable_goals:
+  - save
+  - share
+material_types:
+  - opinion
+  - case
+material_depth:
+  min: light
+keywords:
+  - 提醒
+  - 看明白
+  - 到了这个岁数
+  - 晚年
+  - 日子
+required_materials:
+  - 一个具体生活现象
+  - 一个判断
+  - 一条提醒
+hook_pattern: 先给一个常见生活现象，再接“我后来才知道，这事不能这么看”。
+section_flow:
+  - 现象
+  - 原先理解
+  - 后来的醒悟
+  - 给读者提醒
+ending_pattern: 用“咱们这个岁数，最该守住什么”收尾。
+constraints:
+  - 不要像讲课
+  - 不要抽象词太多
+not_for:
+  - 强冲突故事文
+  - 节奏很快的反转型内容

@@ -1,0 +1,45 @@
+id: tech_mistake_breakdown
+name: 踩坑复盘型
+lane: tech
+subtype: mistake_breakdown
+priority: 100
+summary: 适合“旧做法低效 -> 踩坑 -> 修复 -> 方法沉淀”的技术内容。
+suitable_topics:
+  - 系统升级
+  - 自动化搭建
+  - 工具切换
+  - bug 排查
+suitable_goals:
+  - click
+  - read_finish
+material_types:
+  - case
+  - problem
+material_depth:
+  min: medium
+keywords:
+  - 踩坑
+  - bug
+  - 重构
+  - 升级
+  - 修复
+  - 折腾
+  - 卡住
+required_materials:
+  - 一个明确低效或异常场景
+  - 至少两个关键坑点
+  - 一个核心修复动作
+  - 一条可复用经验
+hook_pattern: 先给异常场景，再抛出“我为什么总绕回来”的反问。
+section_flow:
+  - 旧做法哪里别扭
+  - 关键坑点如何暴露
+  - 修复动作是什么
+  - 最后沉淀成什么判断标准
+ending_pattern: 用一句“以后遇到类似问题怎么判断”收尾。
+constraints:
+  - 不要写成过程流水账
+  - 不要只列工具，不讲问题
+not_for:
+  - 纯概念趋势评论
+  - 无真实案例支撑的观点文

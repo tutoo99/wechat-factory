@@ -1,0 +1,151 @@
+created_at: '2026-04-26T23:50:26.634776'
+channel: emotion
+channel_display_name: 情感号
+lane: emotion
+topic: 女儿嫁到外地第五年，我学会了不再每天等她电话
+goals:
+- click
+- read_finish
+material_types:
+- story
+- opinion
+material_depth: heavy
+persona:
+  id: auntie
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-auntie.yaml
+framework:
+  id: emotion_story_conflict_reveal
+  name: 故事冲突揭露型
+  summary: 适合“生活场景 -> 冲突升级 -> 真相暴露 -> 实在提醒”的情感号内容。
+  hook_pattern: 先给生活场景里的反常举动，再抛一句“我那天才看明白”。
+  section_flow:
+  - 表面冲突出现
+  - 情绪逐步升级
+  - 真正意图暴露
+  - 提炼成实在提醒
+  ending_pattern: 用“到这个岁数，该守住什么”这类实在话收尾。
+  constraints:
+  - 不要说教
+  - 不要金句过密
+  required_materials:
+  - 一个具体生活场景
+  - 一处冲突升级点
+  - 一个“原来如此”的揭露点
+supplemental_materials: ''
+auto_materials: []
+next_step: 按这份 brief 开始写正文初稿
+outline:
+  version: 1
+  topic: 女儿嫁到外地第五年，我学会了不再每天等她电话
+  thesis: 儿女有了自己的日子以后，父母最难学会的不是不想念，而是不把想念变成每天等回应的委屈
+  source_path: wechat-article-pipeline/work/framework-flow/2026-04-26_emotion_女儿嫁到外地第五年_我学会了不再每天等她电话.outline.yaml
+  sections:
+  - index: 1
+    title: 一到晚上八点，我就盯着手机看
+    function: hook
+    reader_question: 女儿都嫁到外地五年了，为什么还天天等电话？
+    core_viewpoint: 很多当妈的嘴上说孩子忙，心里却还把每天一个电话当成自己被惦记的证明
+    evidence_need: story
+    supporting_angles:
+    - story
+    - cost
+    transition_to_next: 从每天等电话的习惯，说到一次没等来的晚上，情绪怎么慢慢变了味
+    materials: []
+  - index: 2
+    title: 那天她没打来，我一晚上没睡踏实
+    function: story
+    reader_question: 只是少接一个电话，怎么会这么难受？
+    core_viewpoint: 等电话等久了，等的就不只是几句话，而是想确认自己在女儿心里还排得上号
+    evidence_need: story
+    supporting_angles:
+    - story
+    - cost
+    transition_to_next: 把自己的委屈讲出来以后，才发现女儿那边也有她的难处
+    materials: []
+  - index: 3
+    title: 女儿一句话，把我说愣了
+    function: problem
+    reader_question: 女儿到底说了什么，让她开始想明白？
+    core_viewpoint: 儿女不是不孝顺，有时候是她已经在另一个家里撑着自己的日子，没法天天照着父母的心情来
+    evidence_need: turning_point
+    supporting_angles:
+    - turning_point
+    - insight
+    transition_to_next: 从女儿的难处，转到自己这些年为什么一直放不下
+    materials: []
+  - index: 4
+    title: 我后来才承认，我怕的不是没人打电话
+    function: insight
+    reader_question: 等电话背后到底藏着什么心事？
+    core_viewpoint: 当妈的最怕的不是电话少了，是孩子离远了以后，自己突然不知道该把日子过给谁看
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    - mistake
+    transition_to_next: 认清这个心事以后，才开始把注意力慢慢收回到自己身上
+    materials: []
+  - index: 5
+    title: 现在她不打来，我也能把晚饭吃热乎
+    function: method
+    reader_question: 不等电话以后，日子真的会好过一点吗？
+    core_viewpoint: 不每天等电话，不是跟女儿生分了，是给她一点喘气的空，也给自己留一点安稳的日子
+    evidence_need: method
+    supporting_angles:
+    - method
+    - insight
+    transition_to_next: 最后把这个变化收成一句给同龄父母的实在话
+    materials: []
+  - index: 6
+    title: 到了这个岁数，想孩子也别把自己想丢了
+    function: ending
+    reader_question: 那父母到底该怎么跟远嫁的女儿相处？
+    core_viewpoint: 孩子远了，心可以近着，但父母不能把自己的晚年全拴在一个电话铃声上
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    - turning_point
+    transition_to_next: ''
+    materials: []
+theme_recommendation:
+  recommended_theme: emotion-warm
+  article_subtype: story_conflict_reveal
+  features:
+    article_length: long
+    contains_table: false
+    contains_code: false
+    emotional_density: high
+  candidates:
+  - theme_id: emotion-warm
+    display_name: 情感暖调（退休阿姨人设）
+    score: 64
+    summary: 暖橙渐变、大字号、亲切排版，适合中老年读者群
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish`
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 适合长段叙事、情绪递进和关系类表达
+  - theme_id: zhouzuoluo-clean
+    display_name: 粥左罗极简红字（纯文字利器）
+    score: 62
+    summary: 极简纯文字排版，无背景卡片无边框无分割线，靠红色强调句和字号层级制造节奏，适合干货长文/金句密集的观点文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish`
+    risks:
+    - 更适合 `opinion, emotional_story, long_read`
+    - 纯文字利器，最适合金句密集、观点密集的干货长文
+  - theme_id: magazine-soft
+    display_name: 杂志柔感
+    score: 58
+    summary: 更像生活杂志的柔和分节和面状标题，适合情绪文、观点文、关系文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `read_finish`
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 更适合“像专栏而不是像教程”的排版气质
+  recommended_from: brief

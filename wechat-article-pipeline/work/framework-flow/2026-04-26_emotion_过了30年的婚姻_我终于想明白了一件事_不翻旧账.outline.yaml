@@ -1,0 +1,50 @@
+outline:
+  version: 1
+  topic: "过了30年的婚姻，我终于想明白了一件事：不翻旧账"
+  thesis: "翻旧账的婚姻，吵赢了一时，输掉的是两个人剩下的日子"
+  sections:
+    - index: 1
+      title: "一吵架我就翻旧账，翻了整整三十年"
+      function: hook
+      reader_question: "这不就是吵架时的正常反应吗？谁不翻呢？"
+      core_viewpoint: "翻旧账是很多老夫妻吵架时的本能反应，但恰恰是这种本能，让日子越过越拧巴"
+      evidence_need: story
+      supporting_angles: ["story", "mistake"]
+      transition_to_next: "从自己的翻旧账习惯，说到老姐妹们的相似经历"
+      materials: []
+    - index: 2
+      title: "我把二十年前那碗面条翻了一百遍"
+      function: story
+      reader_question: "到底翻的是什么？真的只是那碗面条吗？"
+      core_viewpoint: "每次翻出来的旧事都不一样，但翻旧账的人要的从来不是那件事的结果，是当时没人站在她这边这个委屈"
+      evidence_need: story
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "翻旧账翻到什么程度，我才意识到不对劲"
+      materials: []
+    - index: 3
+      title: "有天夜里我突然想通了一件事"
+      function: turning_point
+      reader_question: "她怎么想通的？我也想知道怎么才能不想"
+      core_viewpoint: "翻旧账的根子不是记性好，是那件事从来没有被好好接住过"
+      evidence_need: insight
+      supporting_angles: ["insight", "turning_point"]
+      transition_to_next: "想通之后日子有什么不一样"
+      materials: []
+    - index: 4
+      title: "不翻旧账以后，日子反而顺了"
+      function: insight
+      reader_question: "不翻旧账就能过好吗？那委屈怎么办？"
+      core_viewpoint: "旧账不会翻清，只会越翻越乱；能翻出来的都是没过去的坎，翻不出来的是心里已经放下的"
+      evidence_need: method
+      supporting_angles: ["method", "insight"]
+      transition_to_next: "给同样在翻旧账的老姐妹一个实在提醒"
+      materials: []
+    - index: 5
+      title: "到了这个岁数，最该放下的就是那本旧账"
+      function: ending
+      reader_question: "说起来容易，怎么才能真正放下？"
+      core_viewpoint: "日子是往前的，人老了还往后看，前面的路就走不了多远了"
+      evidence_need: insight
+      supporting_angles: ["insight"]
+      transition_to_next: ""
+      materials: []

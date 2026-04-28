@@ -1,0 +1,20 @@
+schema_version: 1
+id: dense-note
+display_name: 技术密记
+description: 信息密度更高、留白更克制，适合收藏型技术笔记和复盘文
+status: active
+lane_fit:
+  - tech
+persona_fit:
+  - tech
+article_fit:
+  - mistake_breakdown
+  - tool_review
+  - long_read
+goal_fit:
+  - save
+  - read_finish
+wechat_safe_level: high
+authoring_notes:
+  - 适合强调信息密度和可回看性的技术文章
+  - 不适合情绪表达占主导的内容

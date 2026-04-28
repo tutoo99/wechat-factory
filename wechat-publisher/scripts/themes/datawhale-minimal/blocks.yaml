@@ -1,0 +1,76 @@
+body_text:
+  enabled: true
+  variant: default
+  align: justify
+  font_size: 15
+  line_height: 2.0
+
+lead_text:
+  enabled: true
+  variant: dark-intro
+  background: "#757576"
+  color: "#FFFFFF"
+  font_size: 15
+  description: 文首深色卡片区，用于引导/氛围铺垫，白字深底
+
+section_title:
+  enabled: true
+  variant: plain-bold
+  font_size: 20
+  font_weight: bold
+  color: "#222222"
+  margin_top: 24
+  margin_bottom: 16
+
+sub_title:
+  enabled: true
+  variant: pink-highlight
+  font_size: 18
+  font_weight: bold
+  color: "#1F2329"
+  background: "#FFD7D5"
+  description: 核心视觉特征，18px bold 加粉底 #FFD7D5 高亮
+
+quote_card:
+  enabled: true
+  variant: left-indent
+  padding_left: 10
+  color: "#1E1E1E"
+
+checklist:
+  enabled: true
+  variant: clean-bullets
+
+step_list:
+  enabled: true
+  variant: numbered-plain
+  sub_title_color: "#1F2329"
+  sub_title_bg: "#FFD7D5"
+
+code_panel:
+  enabled: false
+  variant: light-panel
+  note: 原文无代码块，使用时建议从 tech-clean 继承样式
+
+data_table:
+  enabled: true
+  variant: clean-grid
+
+image_block:
+  enabled: true
+  variant: rounded-fullwidth
+  border_radius: 12
+  width: 100%
+
+divider:
+  enabled: true
+  variant: thin-line
+  border_color: "#CCCCCC"
+  border_width: 1
+  margin_top: 32
+  margin_bottom: 0
+
+summary_box:
+  enabled: true
+  variant: clean-block
+  background: "#F3F3F3"

@@ -1,0 +1,52 @@
+body_text:
+  enabled: true
+  variant: default
+  align: justify
+
+lead_text:
+  enabled: true
+  variant: spacious
+  font_size_delta: 2
+
+section_title:
+  enabled: true
+  variant: soft-band
+  icons: []
+  rotate_colors: true
+
+sub_title:
+  enabled: true
+  variant: plain-bold
+
+quote_card:
+  enabled: true
+  variant: warm-note
+
+checklist:
+  enabled: true
+  variant: clean-bullets
+
+step_list:
+  enabled: true
+  variant: numbered-flow
+
+code_panel:
+  enabled: true
+  variant: light-panel
+  show_language_label: true
+
+data_table:
+  enabled: true
+  variant: soft-grid
+
+image_block:
+  enabled: true
+  variant: rounded-caption
+
+divider:
+  enabled: true
+  variant: spaced-dots
+
+summary_box:
+  enabled: true
+  variant: soft-callout

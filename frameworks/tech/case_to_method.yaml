@@ -1,0 +1,44 @@
+id: tech_case_to_method
+name: 案例抽象型
+lane: tech
+subtype: case_to_method
+priority: 92
+summary: 适合从一个具体案例，往上提炼成可复用方法。
+suitable_topics:
+  - 系统设计
+  - 流程优化
+  - 自动化实践
+  - 工作流沉淀
+suitable_goals:
+  - save
+  - share
+  - read_finish
+material_types:
+  - case
+  - opinion
+material_depth:
+  min: medium
+keywords:
+  - 模型
+  - 抽象
+  - 方法
+  - 体系
+  - 结构
+  - 设计
+required_materials:
+  - 一个完整案例
+  - 至少一条抽象原则
+  - 可复用的判断标准或步骤
+hook_pattern: 先给具体案例，再强调“这次真正有价值的不是结果，而是背后的方法”。
+section_flow:
+  - 具体案例发生了什么
+  - 为什么不能只看表面
+  - 抽象出哪条方法
+  - 以后怎么复用
+ending_pattern: 收束成一条通用方法论或判断标准。
+constraints:
+  - 不要过早上价值
+  - 抽象时要回扣案例
+not_for:
+  - 纯工具测评
+  - 无法抽象出方法的碎片经验

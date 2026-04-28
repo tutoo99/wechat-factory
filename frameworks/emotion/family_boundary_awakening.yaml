@@ -1,0 +1,44 @@
+id: emotion_family_boundary_awakening
+name: 家庭边界觉醒型
+lane: emotion
+subtype: family_boundary
+priority: 93
+summary: 适合“心软 -> 吃亏 -> 看明白 -> 守边界”的家庭关系文。
+suitable_topics:
+  - 亲戚借钱
+  - 带孙子
+  - 养老边界
+  - 老年人情压力
+suitable_goals:
+  - share
+  - comment
+  - read_finish
+material_types:
+  - story
+  - opinion
+material_depth:
+  min: medium
+keywords:
+  - 边界
+  - 心软
+  - 吃亏
+  - 退休
+  - 晚年
+  - 守住
+required_materials:
+  - 一个“本来以为没事”的起点
+  - 一个吃亏或受委屈细节
+  - 一个醒悟点
+hook_pattern: 先从一句实在话或一次吃亏经历切入，再说“很多麻烦都是从心软开始的”。
+section_flow:
+  - 起初没当回事
+  - 麻烦慢慢变大
+  - 主角意识变化
+  - 上提到边界问题
+ending_pattern: 用一个可执行的提醒收尾。
+constraints:
+  - 不要写成鸡汤
+  - 不要升华太满
+not_for:
+  - 纯故事八卦
+  - 完全没有立场变化的平铺直叙

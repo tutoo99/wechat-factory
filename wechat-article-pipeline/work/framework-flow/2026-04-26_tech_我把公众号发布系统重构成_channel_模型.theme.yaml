@@ -1,0 +1,42 @@
+recommended_theme: dense-note
+article_subtype: case_to_method
+features:
+  article_length: long
+  contains_table: false
+  contains_code: true
+  emotional_density: low
+candidates:
+- theme_id: dense-note
+  display_name: 技术密记
+  score: 74
+  summary: 信息密度更高、留白更克制，适合收藏型技术笔记和复盘文
+  reasons:
+  - 赛道匹配 `tech`
+  - 人设匹配 `tech`
+  - 目标匹配 `save`
+  risks:
+  - 更适合 `mistake_breakdown, tool_review, long_read`
+  - 更适合“看完想收藏”的技术密记型内容
+- theme_id: tech-clean
+  display_name: 技术简洁
+  score: 68
+  summary: 冷蓝灰调、代码高亮、编号分区，适合技术号
+  reasons:
+  - 赛道匹配 `tech`
+  - 人设匹配 `tech`
+  - 目标匹配 `save`
+  risks:
+  - 更适合 `mistake_breakdown, tool_review, long_read`
+  - 适合信息密度高、结构化强的技术长文
+- theme_id: datawhale-minimal
+  display_name: Datawhale 极简黑白（粉底高亮）
+  score: 56
+  summary: 极简黑白灰底 + 粉色点缀，H3标题粉底高亮，文首深色引导区，适合技术社区/开源组织调性
+  reasons:
+  - 赛道匹配 `tech`
+  - 人设匹配 `tech`
+  - 目标匹配 `save`
+  risks:
+  - 更适合 `long_read, opinion, emotional_story`
+  - 极简克制风格，适合技术社区、开源组织、活动报道、人物故事
+recommended_from: brief

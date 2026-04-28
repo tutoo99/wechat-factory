@@ -1,0 +1,50 @@
+outline:
+  version: 1
+  topic: "在软件外包公司待久了，技术人最容易丢掉的不是技术，而是主动找工作的能力"
+  thesis: "外包经历真正危险的地方，不是项目差、技术旧，而是它会一点点替你做选择，让你失去主动定义能力、主动证明价值、主动寻找机会的习惯。"
+  sections:
+    - index: 1
+      title: "最可怕的不是外包，是你慢慢不找机会了"
+      function: "hook"
+      reader_question: "为什么很多人在外包待久了，明明还在写代码，却越来越不敢跳槽？"
+      core_viewpoint: "外包真正消耗人的，不只是技术栈旧，而是让你习惯等安排、等需求、等别人给出口。"
+      evidence_need: "story"
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "表面看是简历不好看，往深了看，是主动性被工作模式一点点磨掉了。"
+      materials: []
+    - index: 2
+      title: "你以为自己缺的是技术，其实缺的是作品感"
+      function: "insight"
+      reader_question: "为什么外包技术人明明做了很多项目，面试时却讲不出自己的价值？"
+      core_viewpoint: "很多外包经历的问题，不是没干活，而是干完以后没有沉淀成能被市场识别的作品和结果。"
+      evidence_need: "insight"
+      supporting_angles: ["insight", "mistake"]
+      transition_to_next: "所以自救的第一步，不是疯狂报课，而是先把自己做过的东西重新产品化。"
+      materials: []
+    - index: 3
+      title: "先把经历翻译成市场听得懂的结果"
+      function: "method"
+      reader_question: "如果已经在外包里待了几年，应该从哪里开始补救？"
+      core_viewpoint: "外包技术人的第一件事，是把项目经历从任务流水账，改写成问题、动作、结果和复用方法。"
+      evidence_need: "method"
+      supporting_angles: ["method", "story"]
+      transition_to_next: "经历被翻译出来以后，还要持续制造新的证据，不然简历永远只停在过去。"
+      materials: []
+    - index: 4
+      title: "别等项目救你，自己补一条成长流水线"
+      function: "method"
+      reader_question: "除了改简历，还能做什么让自己重新进入主动状态？"
+      core_viewpoint: "一个技术人要从外包惯性里出来，必须在工作之外建立自己的作品、复盘和求职反馈闭环。"
+      evidence_need: "method"
+      supporting_angles: ["method", "turning_point"]
+      transition_to_next: "最后要回到一个更现实的问题：不是所有人都要马上离开外包，但每个人都不能把选择权交出去。"
+      materials: []
+    - index: 5
+      title: "可以暂时在外包，但别把选择权外包出去"
+      function: "ending"
+      reader_question: "外包经历是不是就一定没有价值？"
+      core_viewpoint: "外包可以是一段经历，但不能变成一种默认人生；真正要守住的是主动找机会、主动证明自己的能力。"
+      evidence_need: "turning_point"
+      supporting_angles: ["turning_point", "insight"]
+      transition_to_next: ""
+      materials: []

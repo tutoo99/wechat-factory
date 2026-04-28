@@ -1,0 +1,139 @@
+created_at: '2026-04-26T23:05:45.990926'
+channel: emotion
+channel_display_name: 情感号
+lane: emotion
+topic: 过了30年的婚姻，我终于想明白了一件事：不翻旧账
+goals:
+- click
+- save
+material_types:
+- case
+- opinion
+material_depth: medium
+persona:
+  id: auntie
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-auntie.yaml
+framework:
+  id: emotion_warning_realization
+  name: 提醒醒悟型
+  summary: 适合“一个生活现象 -> 一个判断 -> 一个提醒”的晚年感悟文。
+  hook_pattern: 先给一个常见生活现象，再接“我后来才知道，这事不能这么看”。
+  section_flow:
+  - 现象
+  - 原先理解
+  - 后来的醒悟
+  - 给读者提醒
+  ending_pattern: 用“咱们这个岁数，最该守住什么”收尾。
+  constraints:
+  - 不要像讲课
+  - 不要抽象词太多
+  required_materials:
+  - 一个具体生活现象
+  - 一个判断
+  - 一条提醒
+supplemental_materials: ''
+auto_materials: []
+next_step: 按这份 brief 开始写正文初稿
+outline:
+  version: 1
+  topic: 过了30年的婚姻，我终于想明白了一件事：不翻旧账
+  thesis: 翻旧账的婚姻，吵赢了一时，输掉的是两个人剩下的日子
+  source_path: wechat-article-pipeline/work/framework-flow/2026-04-26_emotion_过了30年的婚姻_我终于想明白了一件事_不翻旧账.outline.yaml
+  sections:
+  - index: 1
+    title: 一吵架我就翻旧账，翻了整整三十年
+    function: hook
+    reader_question: 这不就是吵架时的正常反应吗？谁不翻呢？
+    core_viewpoint: 翻旧账是很多老夫妻吵架时的本能反应，但恰恰是这种本能，让日子越过越拧巴
+    evidence_need: story
+    supporting_angles:
+    - story
+    - mistake
+    transition_to_next: 从自己的翻旧账习惯，说到老姐妹们的相似经历
+    materials: []
+  - index: 2
+    title: 我把二十年前那碗面条翻了一百遍
+    function: story
+    reader_question: 到底翻的是什么？真的只是那碗面条吗？
+    core_viewpoint: 每次翻出来的旧事都不一样，但翻旧账的人要的从来不是那件事的结果，是当时没人站在她这边这个委屈
+    evidence_need: story
+    supporting_angles:
+    - story
+    - cost
+    transition_to_next: 翻旧账翻到什么程度，我才意识到不对劲
+    materials: []
+  - index: 3
+    title: 有天夜里我突然想通了一件事
+    function: insight
+    reader_question: 她怎么想通的？我也想知道怎么才能不想
+    core_viewpoint: 翻旧账的根子不是记性好，是那件事从来没有被好好接住过
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    - turning_point
+    transition_to_next: 想通之后日子有什么不一样
+    materials: []
+  - index: 4
+    title: 不翻旧账以后，日子反而顺了
+    function: insight
+    reader_question: 不翻旧账就能过好吗？那委屈怎么办？
+    core_viewpoint: 旧账不会翻清，只会越翻越乱；能翻出来的都是没过去的坎，翻不出来的是心里已经放下的
+    evidence_need: method
+    supporting_angles:
+    - method
+    - insight
+    transition_to_next: 给同样在翻旧账的老姐妹一个实在提醒
+    materials: []
+  - index: 5
+    title: 到了这个岁数，最该放下的就是那本旧账
+    function: ending
+    reader_question: 说起来容易，怎么才能真正放下？
+    core_viewpoint: 日子是往前的，人老了还往后看，前面的路就走不了多远了
+    evidence_need: insight
+    supporting_angles:
+    - insight
+    transition_to_next: ''
+    materials: []
+theme_recommendation:
+  recommended_theme: zhouzuoluo-clean
+  article_subtype: warning_realization
+  features:
+    article_length: medium
+    contains_table: false
+    contains_code: false
+    emotional_density: high
+  candidates:
+  - theme_id: zhouzuoluo-clean
+    display_name: 粥左罗极简红字（纯文字利器）
+    score: 58
+    summary: 极简纯文字排版，无背景卡片无边框无分割线，靠红色强调句和字号层级制造节奏，适合干货长文/金句密集的观点文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `opinion, emotional_story, long_read`
+    - 纯文字利器，最适合金句密集、观点密集的干货长文
+  - theme_id: magazine-soft
+    display_name: 杂志柔感
+    score: 56
+    summary: 更像生活杂志的柔和分节和面状标题，适合情绪文、观点文、关系文
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - emotional_density 偏好命中
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 更适合“像专栏而不是像教程”的排版气质
+  - theme_id: emotion-warm
+    display_name: 情感暖调（退休阿姨人设）
+    score: 56
+    summary: 暖橙渐变、大字号、亲切排版，适合中老年读者群
+    reasons:
+    - 赛道匹配 `emotion`
+    - 人设匹配 `auntie`
+    - emotional_density 偏好命中
+    risks:
+    - 更适合 `emotional_story, opinion`
+    - 适合长段叙事、情绪递进和关系类表达
+  recommended_from: brief

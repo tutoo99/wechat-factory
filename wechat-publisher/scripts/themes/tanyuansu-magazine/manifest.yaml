@@ -1,0 +1,28 @@
+schema_version: 1
+id: tanyuansu-magazine
+display_name: 探元素杂志感（暖橙图文混排）
+description: 杂志感排版，Optima衬线字体+暖橙色调+大行高字间距+图文环绕，适合人物故事/观点长文/成长类深度内容
+status: active
+lane_fit:
+  - emotion
+persona_fit:
+  - auntie
+article_fit:
+  - opinion
+  - emotional_story
+  - growth
+  - long_read
+goal_fit:
+  - read_finish
+  - share
+  - save
+wechat_safe_level: high
+source_article: 探元素公众号 - 从自身经验出发是最适合普通人的赚钱方式
+authoring_notes:
+  - 杂志感强，Optima衬线字体是核心识别特征，区别于所有无衬线主题
+  - 大行高(2em)+大字间距(3px)营造宽松阅读感，适合沉浸式长文
+  - 暖橙色调(#FF8124主色)贯穿CTA和装饰元素
+  - 图文环绕布局，图片作为排版元素参与节奏（非独立卡片）
+  - 章节编号(01/02/03)建议用图片而非文字渲染
+  - 彩色圆点(#F98888/#FFDE6E/#B3D7B1)作为视觉分隔/进度指示
+  - 15px正文+12px脚注的双层字号体系

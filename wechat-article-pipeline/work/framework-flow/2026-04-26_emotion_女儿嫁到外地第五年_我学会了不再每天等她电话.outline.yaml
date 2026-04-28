@@ -1,0 +1,59 @@
+outline:
+  version: 1
+  topic: "女儿嫁到外地第五年，我学会了不再每天等她电话"
+  thesis: "儿女有了自己的日子以后，父母最难学会的不是不想念，而是不把想念变成每天等回应的委屈"
+  sections:
+    - index: 1
+      title: "一到晚上八点，我就盯着手机看"
+      function: hook
+      reader_question: "女儿都嫁到外地五年了，为什么还天天等电话？"
+      core_viewpoint: "很多当妈的嘴上说孩子忙，心里却还把每天一个电话当成自己被惦记的证明"
+      evidence_need: story
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "从每天等电话的习惯，说到一次没等来的晚上，情绪怎么慢慢变了味"
+      materials: []
+    - index: 2
+      title: "那天她没打来，我一晚上没睡踏实"
+      function: story
+      reader_question: "只是少接一个电话，怎么会这么难受？"
+      core_viewpoint: "等电话等久了，等的就不只是几句话，而是想确认自己在女儿心里还排得上号"
+      evidence_need: story
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "把自己的委屈讲出来以后，才发现女儿那边也有她的难处"
+      materials: []
+    - index: 3
+      title: "女儿一句话，把我说愣了"
+      function: problem
+      reader_question: "女儿到底说了什么，让她开始想明白？"
+      core_viewpoint: "儿女不是不孝顺，有时候是她已经在另一个家里撑着自己的日子，没法天天照着父母的心情来"
+      evidence_need: turning_point
+      supporting_angles: ["turning_point", "insight"]
+      transition_to_next: "从女儿的难处，转到自己这些年为什么一直放不下"
+      materials: []
+    - index: 4
+      title: "我后来才承认，我怕的不是没人打电话"
+      function: insight
+      reader_question: "等电话背后到底藏着什么心事？"
+      core_viewpoint: "当妈的最怕的不是电话少了，是孩子离远了以后，自己突然不知道该把日子过给谁看"
+      evidence_need: insight
+      supporting_angles: ["insight", "mistake"]
+      transition_to_next: "认清这个心事以后，才开始把注意力慢慢收回到自己身上"
+      materials: []
+    - index: 5
+      title: "现在她不打来，我也能把晚饭吃热乎"
+      function: method
+      reader_question: "不等电话以后，日子真的会好过一点吗？"
+      core_viewpoint: "不每天等电话，不是跟女儿生分了，是给她一点喘气的空，也给自己留一点安稳的日子"
+      evidence_need: method
+      supporting_angles: ["method", "insight"]
+      transition_to_next: "最后把这个变化收成一句给同龄父母的实在话"
+      materials: []
+    - index: 6
+      title: "到了这个岁数，想孩子也别把自己想丢了"
+      function: ending
+      reader_question: "那父母到底该怎么跟远嫁的女儿相处？"
+      core_viewpoint: "孩子远了，心可以近着，但父母不能把自己的晚年全拴在一个电话铃声上"
+      evidence_need: insight
+      supporting_angles: ["insight", "turning_point"]
+      transition_to_next: ""
+      materials: []

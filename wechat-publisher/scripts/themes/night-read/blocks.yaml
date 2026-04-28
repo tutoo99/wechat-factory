@@ -1,0 +1,104 @@
+body_text:
+  enabled: true
+  variant: spacious-flow
+  font_size: 15
+  line_height: 1.75
+  letter_spacing: 1
+  align: left
+  margin_x: 8
+  description: 疏朗正文流，15px+1px字间距，左对齐
+
+lead_text:
+  enabled: true
+  variant: same-as-body
+  font_size: 15
+  description: 导语与正文同风格
+
+section_title:
+  enabled: true
+  variant: dark-red
+  font_size: 16
+  font_weight: bold
+  color: "#7B0C00"
+  letter_spacing: 1
+  margin_top: 48
+  description: 核心视觉签名，深红棕色章节标题
+
+sub_title:
+  enabled: true
+  variant: black-bold
+  font_size: 15
+  font_weight: bold
+  color: "#000000"
+  letter_spacing: 1
+  description: 正文内加粗关键句，黑色加粗融入行文
+
+accent_text:
+  enabled: true
+  variant: gray-italic
+  font_size: 15
+  color: "#6E6E6E"
+  font_weight: bold
+  letter_spacing: 1
+  description: 暖灰色斜体/加粗，用于总结性金句
+
+quote_card:
+  enabled: true
+  variant: shadow-float
+  padding: 1.5em
+  margin: 1em
+  box_shadow: "rgb(102, 102, 102) 0px 0px 10px 0px"
+  border_radius: 8
+  description: 灰色阴影引用卡片，浮于正文之上，是核心视觉特征
+
+checklist:
+  enabled: true
+  variant: plain-list
+
+step_list:
+  enabled: true
+  variant: numbered-plain
+
+code_panel:
+  enabled: false
+  variant: none
+
+data_table:
+  enabled: false
+  variant: none
+
+image_block:
+  enabled: true
+  variant: fullwidth-raw
+  width: 100%
+  border_radius: 0
+  description: 全宽图片无圆角
+
+divider:
+  enabled: true
+  variant: end-mark
+  font_family: "Cochin-BoldItalic"
+  font_size: 16
+  text: "- End -"
+  description: Cochin衬线斜体结尾标记，是独特视觉签名
+
+cta_bar:
+  enabled: true
+  variant: text-center
+  font_size: 17
+  letter_spacing: 0.54
+  color: "#222222"
+  text_align: center
+  description: 居中CTA文字（看更多走心好文章等）
+
+attribution:
+  enabled: true
+  variant: warm-meta
+  font_size: 13
+  color: "#6E6E6E"
+  letter_spacing: 0.5
+  description: 暖灰色元信息（作者/来源/音频提示）
+
+summary_box:
+  enabled: false
+  variant: none

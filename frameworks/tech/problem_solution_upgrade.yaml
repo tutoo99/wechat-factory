@@ -1,0 +1,43 @@
+id: tech_problem_solution_upgrade
+name: 问题-方案升级型
+lane: tech
+subtype: problem_solution
+priority: 88
+summary: 适合问题定义清晰、解决动作明确的技术实操文。
+suitable_topics:
+  - 流程优化
+  - 规范升级
+  - 工具替换
+  - 效率提升
+suitable_goals:
+  - save
+  - click
+material_types:
+  - problem
+  - list
+material_depth:
+  min: light
+keywords:
+  - 为什么
+  - 方案
+  - 规则
+  - 提升
+  - 效率
+  - 优化
+required_materials:
+  - 一个明确问题定义
+  - 对应解决动作
+  - 前后差异
+hook_pattern: 先指出旧做法的问题，再抛出“新方案到底解决了什么”。
+section_flow:
+  - 问题定义
+  - 旧方案的成本
+  - 新方案的关键动作
+  - 适用边界和提醒
+ending_pattern: 给出一个可照搬的动作或检查清单。
+constraints:
+  - 不要背景过长
+  - 不要只讲结论，不讲动作
+not_for:
+  - 高情绪故事文
+  - 需要强人物冲突推进的内容

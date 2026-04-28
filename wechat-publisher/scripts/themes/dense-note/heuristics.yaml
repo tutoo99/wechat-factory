@@ -1,0 +1,25 @@
+prefer:
+  lane:
+    - tech
+  article_subtype:
+    - mistake_breakdown
+    - long_read
+  goals:
+    - save
+    - read_finish
+  content_features:
+    contains_code: true
+    contains_table: true
+    article_length: long
+    emotional_density: low
+
+avoid:
+  article_subtype:
+    - emotional_story
+  content_features:
+    emotional_density: high
+    audience_age: senior
+
+notes:
+  - 更适合“看完想收藏”的技术密记型内容
+  - 视觉节奏偏紧凑，不适合特别抒情的长段叙事

@@ -1,0 +1,30 @@
+schema_version: 1
+id: zhouzuoluo-clean
+display_name: 粥左罗极简红字（纯文字利器）
+description: 极简纯文字排版，无背景卡片无边框无分割线，靠红色强调句和字号层级制造节奏，适合干货长文/金句密集的观点文
+status: active
+lane_fit:
+  - emotion
+  - tech
+persona_fit:
+  - auntie
+  - tech
+article_fit:
+  - opinion
+  - emotional_story
+  - long_read
+  - growth
+  - listicle
+goal_fit:
+  - read_finish
+  - share
+  - save
+wechat_safe_level: high
+source_article: 粥左罗公众号 - 曾国藩堪称封神的10句话
+authoring_notes:
+  - 纯文字利器，不依赖任何背景色/卡片/边框来制造视觉层次
+  - 排版节奏完全靠字号层级（17/18/20/24px）和红色强调句驱动
+  - 适合金句密集、观点密集的干货长文，让文字本身说话
+  - 红色（#FA5359）用于关键句/CTA/数字强调，使用要克制
+  - 蓝色（#0052FF）仅用于链接/可点击元素
+  - 无代码块样式（原文未使用），需从 tech-clean 继承或自定义

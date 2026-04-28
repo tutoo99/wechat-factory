@@ -1,0 +1,85 @@
+created_at: '2026-04-22T14:28:07.314844'
+channel: tech
+channel_display_name: 技术号
+lane: tech
+topic: 我见过太多技术人，把学不会当成学不了——从功能测试到AI编程的转型链路
+goals:
+- click
+- save
+material_types:
+- case
+- opinion
+material_depth: heavy
+persona:
+  id: tech
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-tech.yaml
+framework:
+  id: tech_experience_to_methodology
+  name: 经验 → 方法论 → 实例验证型
+  summary: 适合"从个人经历中提炼出通用方法论，用一个具体领域作为完整案例跑通验证，最后升华为认知层面"的深度内容。读者拿走的是一套可复制的方法论，而不只是知识。
+  hook_pattern: 用个人身份标签 + 过往成就建立可信度，再抛出一个普遍性问题（"大家都在想但没人说清楚的"），然后用一个具体实验/经历引出答案。让读者觉得"这个人有资格讲这个"。
+  section_flow:
+  - 身份锚定：个人标签 + 2-3 个过往成就（证明"我一直在做这类事"）
+  - 普遍性问题：抛出读者关心的痛点/困惑，制造共鸣（"这个问题我想了很久"）
+  - 实验引入：用一个具体领域/项目作为验证载体，给出结果前置（"48小时速通XX"）
+  - 通用框架：提出可复制的方法论/公式（总-分结构，先给公式再拆步骤）
+  - 步骤拆解（核心主体）：每步统一微型结构（常见做法的错误 → 我的做法 → 底层原理 → 具体操作/提示词），步骤间有递进关系
+  - 铁律/规则补充：从踩坑中提炼的 2-3 条具体规则，每条有反面案例 + 正确做法
+  - 认知升华：从"怎么做"升到"这意味着什么"，给出一个更高的视角，让读者觉得不只是学了一招，而是升级了认知
+  ending_pattern: 用一个简洁的哲学式判断收束全文（"学习从来没有捷径，但确实有了更聪明的路径分工"），不号召行动，留给读者思考空间。
+  constraints:
+  - 方法论必须有通用性，不能只适用于案例中的那个领域
+  - 每个步骤都要有底层原理支撑，不能只讲"我做了什么"不讲"为什么这样做"
+  - 案例和框架的比例控制在 4:6，案例是验证手段，框架才是主体
+  - 铁律要有具体细节（错误长什么样、怎么修复的），不能泛泛而谈
+  - 认知升华部分要回扣开头的问题，形成闭环
+  required_materials:
+  - 一个明确的通用方法论（不是碎片经验，是成体系的方法）
+  - 一个完整的具体案例作为验证载体（从头到尾跑通）
+  - 方法论背后的底层原理/认知科学支撑
+  - 至少 3 条从失败中提炼的具体规则
+supplemental_materials: ''
+next_step: 按这份 brief 开始写正文初稿
+theme_recommendation:
+  recommended_theme: dense-note
+  article_subtype: experience_to_methodology
+  features:
+    article_length: long
+    contains_table: false
+    contains_code: true
+    emotional_density: low
+  candidates:
+  - theme_id: dense-note
+    display_name: 技术密记
+    score: 74
+    summary: 信息密度更高、留白更克制，适合收藏型技术笔记和复盘文
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 更适合“看完想收藏”的技术密记型内容
+  - theme_id: tech-clean
+    display_name: 技术简洁
+    score: 68
+    summary: 冷蓝灰调、代码高亮、编号分区，适合技术号
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 适合信息密度高、结构化强的技术长文
+  - theme_id: datawhale-minimal
+    display_name: Datawhale 极简黑白（粉底高亮）
+    score: 56
+    summary: 极简黑白灰底 + 粉色点缀，H3标题粉底高亮，文首深色引导区，适合技术社区/开源组织调性
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `long_read, opinion, emotional_story`
+    - 极简克制风格，适合技术社区、开源组织、活动报道、人物故事
+  recommended_from: brief

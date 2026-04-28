@@ -1,0 +1,45 @@
+id: emotion_story_conflict_reveal
+name: 故事冲突揭露型
+lane: emotion
+subtype: story_conflict_reveal
+priority: 100
+summary: 适合“生活场景 -> 冲突升级 -> 真相暴露 -> 实在提醒”的情感号内容。
+suitable_topics:
+  - 家庭矛盾
+  - 亲戚边界
+  - 子女关系
+  - 晚年冲突
+suitable_goals:
+  - click
+  - share
+  - read_finish
+material_types:
+  - story
+  - case
+material_depth:
+  min: medium
+keywords:
+  - 老伴
+  - 子女
+  - 亲戚
+  - 退休
+  - 边界
+  - 心寒
+  - 一句话
+required_materials:
+  - 一个具体生活场景
+  - 一处冲突升级点
+  - 一个“原来如此”的揭露点
+hook_pattern: 先给生活场景里的反常举动，再抛一句“我那天才看明白”。
+section_flow:
+  - 表面冲突出现
+  - 情绪逐步升级
+  - 真正意图暴露
+  - 提炼成实在提醒
+ending_pattern: 用“到这个岁数，该守住什么”这类实在话收尾。
+constraints:
+  - 不要说教
+  - 不要金句过密
+not_for:
+  - 纯理财攻略
+  - 无具体人物和场景的空泛感悟

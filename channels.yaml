@@ -1,0 +1,18 @@
+channels:
+  tech:
+    display_name: 技术号
+    lane: tech
+    profile: mp__qiaosan
+    persona: tech
+    archive_account: tech
+    default_author: 乔三AI效率工坊
+    status: active
+
+  emotion:
+    display_name: 情感号
+    lane: emotion
+    profile: mp__wannianqingxingshuo
+    persona: auntie
+    archive_account: emotion
+    default_author: 晚年清醒说
+    status: active

@@ -1,0 +1,23 @@
+prefer:
+  lane:
+    - emotion
+  article_subtype:
+    - emotional_story
+    - opinion
+  goals:
+    - read_finish
+    - share
+  content_features:
+    emotional_density: high
+    article_length: medium
+
+avoid:
+  article_subtype:
+    - mistake_breakdown
+  content_features:
+    contains_code: true
+    contains_table: true
+
+notes:
+  - 更适合“像专栏而不是像教程”的排版气质
+  - 如果文章特别工具化，优先考虑 emotion-warm 或 tech 向主题

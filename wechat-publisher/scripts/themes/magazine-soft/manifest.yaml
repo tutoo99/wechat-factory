@@ -1,0 +1,19 @@
+schema_version: 1
+id: magazine-soft
+display_name: 杂志柔感
+description: 更像生活杂志的柔和分节和面状标题，适合情绪文、观点文、关系文
+status: active
+lane_fit:
+  - emotion
+persona_fit:
+  - auntie
+article_fit:
+  - emotional_story
+  - opinion
+goal_fit:
+  - read_finish
+  - share
+wechat_safe_level: high
+authoring_notes:
+  - 适合更柔和、更像专栏的情绪表达
+  - 不建议用于代码和表格特别多的文章

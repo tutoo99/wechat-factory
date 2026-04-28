@@ -1,0 +1,29 @@
+schema_version: 1
+id: datawhale-minimal
+display_name: Datawhale 极简黑白（粉底高亮）
+description: 极简黑白灰底 + 粉色点缀，H3标题粉底高亮，文首深色引导区，适合技术社区/开源组织调性
+status: active
+lane_fit:
+  - tech
+  - emotion
+persona_fit:
+  - tech
+  - auntie
+article_fit:
+  - long_read
+  - opinion
+  - emotional_story
+  - event_report
+  - tool_review
+goal_fit:
+  - read_finish
+  - share
+  - save
+wechat_safe_level: high
+source_article: Datawhale 2050学习节线下活动推文
+authoring_notes:
+  - 整体克制干净，信息密度适中，不抢内容风头
+  - H3 粉底高亮是核心视觉特征，用于子标题/关键句强调
+  - 文首深色卡片区（#757576底+白字）适合做引导/氛围铺垫
+  - 无代码块样式（原文未使用），使用时需从 tech-clean 继承或自定义
+  - 适合技术社区、开源组织、活动报道类内容

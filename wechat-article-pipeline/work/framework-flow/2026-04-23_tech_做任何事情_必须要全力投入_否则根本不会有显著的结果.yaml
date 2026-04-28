@@ -1,0 +1,87 @@
+created_at: '2026-04-23T04:17:23.620988'
+channel: tech
+channel_display_name: 技术号
+lane: tech
+topic: 做任何事情，必须要全力投入，否则根本不会有显著的结果
+goals:
+- click
+- save
+material_types:
+- case
+- opinion
+material_depth: heavy
+persona:
+  id: tech
+  path: /Users/naipan/.hermes/skills/wechat-factory/persona-tech.yaml
+framework:
+  id: tech_product_conversion_affiliate
+  name: 教程案例 + 佣金转化型
+  summary: 适合"用详细教程和真实案例证明某个工具/平台好用，文中多处嵌入购买链接赚佣金"的文章。读者因为拿到了可复制的实操方案而信任推荐。
+  hook_pattern: 引用上篇爆款数据建立可信度，再用"读者问得最多的问题"切入，给出"XX 2.0 省钱版/升级版"的定位，让读者觉得这篇是应需而来。
+  section_flow:
+  - 开头：引用上篇数据 + "读者最关心的问题" + 本篇定位（升级版/省钱版/补充版）
+  - 产品露出（轻量）：顺带提一句推荐产品，带链接，不展开，"但便宜不是理由，能干活才是"做转折
+  - 架构/方案讲解：用清晰的结构图或列表说明整体方案设计
+  - 搭建教程：给可直接复制粘贴的 prompt / 配置 / 代码，手把手教
+  - Case 验证（2-3个）：每个 Case 统一结构（痛点 → 指令 → 执行过程 → 效果总结），证明方案可行
+  - 收束总结：算总账（成本对比/效率对比），给出一句话结论
+  - 转化收口："三步复刻"式行动指引 → 产品购买链接 → 套餐选择建议
+  ending_pattern: 用"三步开始"把整个教程收束成简单动作，再给购买链接和套餐建议，让读者从"学到东西"自然过渡到"下单"。
+  constraints:
+  - 教程部分要有可直接复制的代码/prompt/配置，不能只讲思路不给东西
+  - Case 要有真实细节（具体指令、具体输出、具体耗时），不能泛泛而谈
+  - 产品链接分散嵌入（开头、中间、结尾各一处），不要只在底部集中放
+  - 付费转化要自然，产品是教程方案的"基础设施"，不是额外推销
+  - 结尾的套餐建议要帮读者做选择（轻度用选X，重度用选Y），降低决策成本
+  required_materials:
+  - 一个可复制的完整操作流程（读者能照着做）
+  - 至少 2 个真实 Case 证明方案可行
+  - 一个具体的推荐产品，有明确的购买链接
+  - 前后对比数据（成本/效率/效果）
+supplemental_materials: ''
+auto_materials: []
+next_step: 按这份 brief 开始写正文初稿
+theme_recommendation:
+  recommended_theme: dense-note
+  article_subtype: product_conversion_affiliate
+  features:
+    article_length: long
+    contains_table: true
+    contains_code: true
+    emotional_density: low
+    contains_quote: false
+  candidates:
+  - theme_id: dense-note
+    display_name: 技术密记
+    score: 80
+    summary: 信息密度更高、留白更克制，适合收藏型技术笔记和复盘文
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 更适合“看完想收藏”的技术密记型内容
+  - theme_id: tech-clean
+    display_name: 技术简洁
+    score: 74
+    summary: 冷蓝灰调、代码高亮、编号分区，适合技术号
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `mistake_breakdown, tool_review, long_read`
+    - 适合信息密度高、结构化强的技术长文
+  - theme_id: datawhale-minimal
+    display_name: Datawhale 极简黑白（粉底高亮）
+    score: 56
+    summary: 极简黑白灰底 + 粉色点缀，H3标题粉底高亮，文首深色引导区，适合技术社区/开源组织调性
+    reasons:
+    - 赛道匹配 `tech`
+    - 人设匹配 `tech`
+    - 目标匹配 `save`
+    risks:
+    - 更适合 `long_read, opinion, emotional_story`
+    - 极简克制风格，适合技术社区、开源组织、活动报道、人物故事
+  recommended_from: /Users/naipan/.hermes/skills/wechat-factory/wechat-article-pipeline/work/framework-flow/2026-04-23_tech_做任何事情_必须要全力投入_否则根本不会有显著的结果.draft.md

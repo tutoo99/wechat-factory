@@ -1,0 +1,23 @@
+prefer:
+  lane:
+    - emotion
+  article_subtype:
+    - emotional_story
+    - opinion
+  goals:
+    - read_finish
+    - share
+  content_features:
+    emotional_density: high
+    contains_code: false
+
+avoid:
+  article_subtype:
+    - mistake_breakdown
+  content_features:
+    contains_code: true
+    contains_table: true
+
+notes:
+  - 适合长段叙事、情绪递进和关系类表达
+  - 技术文或信息密度特别高的清单文不建议优先使用

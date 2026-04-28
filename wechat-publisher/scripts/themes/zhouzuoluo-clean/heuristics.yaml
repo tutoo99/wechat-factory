@@ -1,0 +1,34 @@
+prefer:
+  lane:
+    - emotion
+  article_subtype:
+    - opinion
+    - emotional_story
+    - listicle
+    - growth
+  goals:
+    - read_finish
+    - share
+    - save
+  content_features:
+    emotional_density: high
+    quote_density: high
+    contains_image: false
+
+avoid:
+  article_subtype:
+    - mistake_breakdown
+    - tool_review
+  content_features:
+    contains_code: true
+    contains_table: true
+    contains_heavy_image: true
+    emotional_density: low
+
+notes:
+  - 纯文字利器，最适合金句密集、观点密集的干货长文
+  - 红色强调句是唯一视觉调味，一篇文章建议不超过8-10处
+  - 如果文章有大量图片/代码/表格，优先使用 tech-clean 或 datawhale-minimal
+  - 排版节奏全靠字号层级和段落自然流动，不要额外加装饰
+  - 适合"曾国藩10句话""XX的N个道理"这类清单体/金句体文章
+  - 情感号观点文、成长文使用效果最佳

@@ -1,0 +1,40 @@
+id: common_hook_truth_method
+name: 钩子-真相-方法型
+lane: common
+subtype: truth_method
+priority: 70
+summary: 适合跨赛道的“先钩子、再反常识、最后给方法”的结构。
+suitable_topics:
+  - 认知升级
+  - 经验总结
+  - 方法沉淀
+suitable_goals:
+  - click
+  - save
+material_types:
+  - opinion
+  - case
+material_depth:
+  min: light
+keywords:
+  - 真正
+  - 不是
+  - 而是
+  - 方法
+  - 判断
+required_materials:
+  - 一个明确钩子
+  - 一个反常识判断
+  - 一条可执行方法
+hook_pattern: 先抛一个反直觉判断，再给一个场景支撑。
+section_flow:
+  - 开头钩子
+  - 真相重构
+  - 方法动作
+  - 收尾提醒
+ending_pattern: 用一句行动建议收尾。
+constraints:
+  - 需要按 persona 改写语气
+  - 不要机械套“不是...而是...”
+not_for:
+  - 强人物故事驱动内容

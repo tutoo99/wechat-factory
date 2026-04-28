@@ -1,0 +1,84 @@
+body_text:
+  enabled: true
+  variant: plain-flow
+  font_size: 17
+  line_height: 1.75
+  letter_spacing: 0.544
+  align: justify
+  margin_x: 8
+  description: 纯文字段落，无背景无边框，靠字号和行高自然呼吸
+
+lead_text:
+  enabled: true
+  variant: same-as-body
+  font_size: 17
+  description: 导语和正文同字号，不做视觉区分，靠内容本身吸引
+
+section_title:
+  enabled: true
+  variant: plain-bold
+  font_size: 24
+  font_weight: bold
+  color: "#222222"
+  line_height: 1.75
+  description: 大标题纯加粗，无背景无装饰
+
+sub_title:
+  enabled: true
+  variant: bold-upsize
+  font_size: 20
+  font_weight: bold
+  color: "#333333"
+  line_height: 1.75
+  description: 子标题加粗放大，无背景
+
+accent_text:
+  enabled: true
+  variant: red-bold
+  font_size: 17
+  font_weight: bold
+  color: "#FA5359"
+  letter_spacing: 0.5
+  description: 核心视觉特征，红色加粗强调关键句，克制使用
+
+quote_card:
+  enabled: false
+  variant: none
+  note: 原文不使用引用卡片样式，引文直接融入正文
+
+checklist:
+  enabled: true
+  variant: plain-list
+  description: 清单无装饰，纯文字排列
+
+step_list:
+  enabled: true
+  variant: numbered-plain
+  description: 编号列表无背景无圆角
+
+code_panel:
+  enabled: false
+  variant: none
+  note: 原文无代码块，使用时建议从 tech-clean 继承
+
+data_table:
+  enabled: false
+  variant: none
+  note: 原文无表格
+
+image_block:
+  enabled: true
+  variant: fullwidth-raw
+  width: 100%
+  border_radius: 0
+  description: 全宽图片无圆角，不抢注意力
+
+divider:
+  enabled: false
+  variant: none
+  note: 原文不使用分割线，靠段落间距和字号变化自然分段
+
+summary_box:
+  enabled: false
+  variant: none
+  note: 原文不使用总结卡片

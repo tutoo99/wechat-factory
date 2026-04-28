@@ -1,0 +1,64 @@
+colors:
+  primary: "#1E1E1E"
+  secondary: "#222222"
+  accent: "#FFD7D5"
+  text: "#1E1E1E"
+  text_secondary: "#494949"
+  text_muted: "#7F7F7F"
+  surface: "#FFFFFF"
+  surface_soft: "#F3F3F3"
+  border: "#CCCCCC"
+  link: "#1E1E1E"
+  code_bg: "#F3F3F3"
+  code_inline_bg: "#F3F3F3"
+  quote_bg: "#F3F3F3"
+  highlight_bg: "#FFD7D5"
+  heading_palette:
+    - "#222222"
+    - "#1F2329"
+    - "#1E1E1E"
+  code_text: "#1E1E1E"
+  code_label: "#7F7F7F"
+  inline_code_text: "#1E1E1E"
+  intro_bg: "#757576"
+  intro_text: "#FFFFFF"
+  divider: "#CCCCCC"
+
+typography:
+  font_family: "system-ui,-apple-system,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Hiragino Sans GB,Microsoft YaHei UI,Microsoft YaHei,Arial,sans-serif"
+  body_size: 15
+  lead_size: 17
+  caption_size: 13
+  code_size: 13
+  line_height: 2.0
+  letter_spacing: 0.5
+  h2_size: 20
+  h3_size: 18
+  footnote_size: 12
+  font_weight_heading: bold
+  font_weight_body: 400
+  text_align: justify
+
+spacing:
+  content_padding_x: 0
+  paragraph_gap: 24
+  block_gap: 24
+  section_gap_top: 32
+  section_gap_bottom: 16
+  sub_section_gap_top: 24
+  sub_section_gap_bottom: 12
+  image_gap: 24
+  indent_left: 10
+
+radius:
+  sm: 4
+  md: 8
+  lg: 12
+
+border:
+  width_thin: 1
+  width_strong: 1.5
+
+shadow:
+  card: "none"
+  image: "none"

@@ -1,0 +1,20 @@
+schema_version: 1
+id: tech-clean
+display_name: 技术简洁
+description: 冷蓝灰调、代码高亮、编号分区，适合技术号
+status: active
+lane_fit:
+  - tech
+persona_fit:
+  - tech
+article_fit:
+  - mistake_breakdown
+  - tool_review
+  - long_read
+goal_fit:
+  - save
+  - read_finish
+wechat_safe_level: high
+authoring_notes:
+  - 适合带代码、表格、步骤拆解的技术内容
+  - 情绪型叙事不建议优先使用

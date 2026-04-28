@@ -1,0 +1,158 @@
+# 封面提示词模板
+# 每个模板用于火山引擎文生图 API（doubao-seedream-4-0）
+# 占位符：{{title}} = 主标题，{{subtitle}} = 副标题（可选）
+# 所有模板末尾已统一追加：只生成一张图 + 横向宽幅构图
+# 【注意】文生图模型会将提示词中的描述性文字当成画面文字渲染，
+#   因此每个模板末尾必须追加负向文字指令，禁止渲染非标题文字。
+
+templates:
+
+  # ── 1. 极简黑白风 ──────────────────────────────────
+  minimal_bw:
+    name: 极简黑白风
+    description: 纯黑白配色，大面积留白，克制高级感，粗黑体居中
+    fit_channels: [tech, emotion]
+    fit_article_types: [opinion, long_read, experience_to_methodology, mistake_breakdown]
+    prompt: |
+      极简黑白风格的公众号封面图，整体采用纯黑白配色，无彩色元素，呈现克制、理性、高级感的设计调性。背景为白色，中央大面积留白，构图干净简洁，强调留白美学与视觉呼吸感。主标题"{{title}}"采用粗黑体无衬线字体，居中放置，占据画面视觉焦点区域，字体大而醒目。{{subtitle_prompt}}文字前景无边框包裹，直接叠加于背景之上，整体排版对齐精致考究，展现极简主义设计风格。画面角落可点缀极细线条构成的抽象图形，保持黑白色系与极简美感。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 2. 商务资讯风 ──────────────────────────────────
+  business_info:
+    name: 商务资讯风
+    description: 城市写字楼背景，深蓝灰白配色，专业理性都市感
+    fit_channels: [tech]
+    fit_article_types: [opinion, industry_analysis, tool_review]
+    prompt: |
+      商业资讯主题的公众号封面图，整体风格专业、理性、具有都市感。背景为城市写字楼高层俯拍视角，远处可见玻璃幕墙反射的蓝天白云，中景是排列整齐的办公桌，桌面上摆放着笔记本电脑、日报图表、智能手机等典型商务物件，桌角可见一杯咖啡和便签，体现信息密集和高效办公氛围。画面整体配色以深蓝、灰白为主，强调理性与专业，点缀少量亮黄色或橙色作为视觉引导。背景加不透明度10%左右的黑色遮罩，以便凸显文字。画面中央以大号字体呈现主标题"{{title}}"，使用清晰挺拔的无衬线字体，文字为白色并带有微弱投影。{{subtitle_prompt}}文字排版紧凑有序。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 3. 赛博科技风 ──────────────────────────────────
+  cyberpunk:
+    name: 赛博科技风
+    description: 蓝黑夜景，霓虹字体，HUD界面，电流光效，科技感强
+    fit_channels: [tech]
+    fit_article_types: [tool_review, tech_tutorial, ai_practice, experience_to_methodology]
+    prompt: |
+      赛博科技风的公众号封面图。画面背景为深邃蓝黑色调，采用赛博朋克风格的城市夜景作衬托：背景远处为模糊处理的科技都市轮廓，有金属材质建筑、漂浮全息广告、以及虚拟信息流光带。整个背景虚化并降亮度，只作为氛围背景存在。主标题"{{title}}"位于画面中央占据约70%的空间，采用极简无衬线字体，字体为亮蓝或荧光白，发出霓虹微光，具有电流流动的质感。{{subtitle_prompt}}文字排版居中对齐，层次分明，具有极强的视觉冲击力。文字后方有半透明的数字信息板块作为承托，像一个高科技界面HUD，边缘发出荧光线条。周围点缀有动态数字雨、雷达扫描圈、电路纹路、跳动的数据点，整体画面科技感强烈。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 4. 拼贴海报风 ──────────────────────────────────
+  collage_poster:
+    name: 拼贴海报风
+    description: 撕纸贴纸质感，荧光色，卡通元素，青春活力
+    fit_channels: [tech, emotion]
+    fit_article_types: [light_topic, tips_collection, youth_growth]
+    prompt: |
+      拼贴贴纸风的公众号封面图。画面以明亮欢快的色调为主，背景是抽象拼贴风的学习场景组合：有撕边笔记本纸纹理、荧光记号笔划痕、图钉、便利贴、以及电脑屏幕贴纸风格图案。背景色使用淡米白搭配橘黄与薄荷绿作为点缀，整体清爽明亮。中央为一个不规则形状的白色文字块，质感仿佛手撕纸贴在背景上，主标题"{{title}}"使用黑色粗体字，字形略带手写感，充满青春活力。{{subtitle_prompt}}标题周围点缀有卡通风格贴纸图案，如放大镜、星星、闪电图标等，增强趣味性和动感。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 5. 热带雨林风 ──────────────────────────────────
+  tropical:
+    name: 热带雨林风
+    description: 绿色自然，巨树藤蔓，野性视觉冲击，探索感
+    fit_channels: [emotion]
+    fit_article_types: [lifestyle, exploration, personal_growth]
+    prompt: |
+      热带雨林探索主题的公众号封面图。画面整体构图以前景大字视觉为主，背景自然风光为辅。背景为一片潮湿浓密的热带雨林：铺满绿色苔藓的泥地、高耸入云的雨林巨树、缠绕的藤蔓从树冠垂落，空气中弥漫着雾气和阳光穿透树叶的光斑，瀑布从画面一侧倾泻而下。整体采用绿色、深棕与金色光斑的自然调色。画面中央文字占据画面约60%-70%的面积，为视觉主焦点。主标题"{{title}}"使用黑色粗体字，占据视觉中心。{{subtitle_prompt}}整体标题区域居中对齐。标题周围点缀少量装饰元素：如卡通叶片图形、灵巧的绿色箭头等，提升活泼感。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 6. 手绘插画风 ──────────────────────────────────
+  hand_drawn:
+    name: 手绘插画风
+    description: 温暖柔和，书房场景，手写字体，贴纸装饰
+    fit_channels: [tech, emotion]
+    fit_article_types: [opinion, personal_growth, experience_to_methodology, workplace_emotion]
+    prompt: |
+      手绘插画风格的公众号封面图。画面整体色调温暖柔和，采用淡黄、浅蓝和橄榄绿等自然手绘色彩。背景是一间布置温馨的书房场景，墙上有便签贴纸和图表，桌面上放着笔记本电脑、书籍和一杯热咖啡。窗外透进柔和日光，营造出静谧而专注的氛围。画面中央偏上是主视觉文字区，使用手绘感无衬线字体书写主标题"{{title}}"，字体为深棕色描边、淡橙填充，整体醒目柔和。{{subtitle_prompt}}文字部分不采用规则矩形文字框，而是用不规则手绘风气泡形背景衬底，底部边缘带有手绘样式的虚线装饰、笔刷涂抹效果和小贴纸元素。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 7. 软萌可爱风 ──────────────────────────────────
+  cute:
+    name: 软萌可爱风
+    description: 粉嫩梦幻，卡通字体，星星小动物，治愈系
+    fit_channels: [emotion]
+    fit_article_types: [female_growth, intimate_relationship, family_of_origin, healing]
+    prompt: |
+      软萌可爱风的公众号封面图。画面背景是一片粉嫩温暖的梦幻场景：淡粉色的天空中漂浮着几朵毛绒绒的白云，阳光像奶油糖一样洒落在画面上。下方是一片软乎乎的卡通草地，上面点缀着笑脸花朵和跳跳糖造型的小蘑菇。远处隐约可见糖果色山丘和爱心热气球。主文字区域居中偏上，采用大比例的手写感卡通字体。文字颜色以粉白渐变为主，边缘带有柔光描边。主标题"{{title}}"位于正中央。{{subtitle_prompt}}文字周围点缀有卡通星星、小动物贴纸、波点云朵和跳动音符图案，增强整体软萌氛围。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 8. 温暖治愈风 ──────────────────────────────────
+  warm_healing:
+    name: 温暖治愈风
+    description: 金色原野，樱花，暖米色纸质框，温馨安心
+    fit_channels: [emotion]
+    fit_article_types: [female_growth, intimate_relationship, family_of_origin, workplace_emotion, healing]
+    prompt: |
+      一张治愈温暖风格的公众号封面图，画面背景是一片宁静的金色原野，阳光斜洒在柔软的草地上，远处是连绵起伏的浅褐色山丘，山脚点缀着几棵盛开的粉白色樱花树，天边是温柔的橙粉色晚霞和几朵散落的软绵云朵。整体色调以米白、浅粉、淡橙为主，营造出一种静谧而安心的氛围。画面中央的大面积是一张半透明的暖米色手绘纸质质感文字框，占画面约70%面积，采用仿手写感温柔字体。内含主标题"{{title}}"，采用手写感的深棕色字体，字形柔和；{{subtitle_prompt}}文字框边缘点缀着小巧插画风的治愈元素：蜷缩在书上的猫咪、热气腾腾的奶茶杯、飘落的枫叶，整体设计温馨可亲。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 9. 水彩写意风 ──────────────────────────────────
+  watercolor:
+    name: 水彩写意风
+    description: 淡米白浅青，水彩晕染，飞鸟山峦，轻文艺气质
+    fit_channels: [tech, emotion]
+    fit_article_types: [opinion, experience_to_methodology, long_read, personal_growth]
+    prompt: |
+      以"水彩写意"风格创作一张公众号封面图，画面展现治愈、松弛、带有轻文艺气质的视觉氛围。背景以淡米白至浅青蓝为主调，采用湿画法晕染技法层叠出远处山峦和天空的虚实交界，画面上方为云雾缭绕的浅蓝天空，点缀几只朦胧飞鸟；画面下方则用绿色与淡棕交融的水彩晕染方式描绘出简化的树影、野草和隐约小道。前景文字为画面视觉主角，占据画面中上方大约40%的空间，整体布局居中对齐。主标题"{{title}}"采用仿手写水彩字风格，字大而有力；{{subtitle_prompt}}文字底部加入淡灰蓝色水彩笔刷纹理作为"文字承托"，使其更加突出。文字边缘略带水晕效果，兼顾艺术性与可读性。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+  # ── 10. 中式治愈人像风 ───────────────────────────────
+  chinese_healing_portrait:
+    name: 中式治愈人像风
+    description: 中年女性窗边静坐，低饱和暖调，中式极简，高级电影感
+    fit_channels: [emotion]
+    fit_article_types: [emotion_story_conflict_reveal, story_conflict_reveal, intimate_relationship, family_boundary_awakening, family_of_origin, healing, long_read]
+    prompt: |
+      治愈氛围感横版长构图，极简中式温柔画风，低饱和暖调光影，柔和逆光，浅米白、茶棕、淡杏等高级素雅配色。画面主体是一位五十岁左右的中年温婉知性女性，独自静坐在原木窗边沙发上，眉眼平静淡然，眼神释然通透。窗外是朦胧黄昏柔光，手边放着一杯温热清茶，房间简约干净，没有杂乱元素。画面氛围安静治愈，自带岁月沉淀感，温柔沧桑又松弛，光影细腻柔和，胶片质感，轻微暗角，高级电影感构图，留白充足，情绪氛围浓，适合中年婚姻、家庭关系、晚年清醒类情感文章，画面自带故事感和共鸣感。
+      文字排版：画面上方叠加一行简约纤细中文标题"{{title}}"，字体素雅浅灰色或茶棕色，不遮挡主体人物和主要光影，文艺走心风，标题清晰可读但不喧宾夺主。{{subtitle_prompt}}整体风格为电影级氛围感、写实柔和人像、中式极简治愈风、高清细腻、情绪向、抓人眼球。横向宽幅构图，适合作为公众号文章头图。只生成一张图。
+      【重要】画面中只允许出现上述主标题中的文字，不得出现任何其他文字。不得出现任何标题以外的文字、数字、标识或水印。
+
+
+# ── 匹配规则 ─────────────────────────────────────────
+# 根据文章的 channel + article_type 自动推荐最合适的模板
+# article_type 来自 framework 的 ID 或手动指定
+
+matching_rules:
+  # 技术号匹配优先级
+  tech:
+    - template: cyberpunk
+      article_types: [tech_tutorial, tool_review, ai_practice]
+      reason: 科技/AI/编程实战内容，赛博风最搭
+    - template: minimal_bw
+      article_types: [opinion, long_read, experience_to_methodology, mistake_breakdown]
+      reason: 认知观点/方法论/长文，极简黑白克制高级
+    - template: hand_drawn
+      article_types: [workplace_emotion, personal_growth]
+      reason: 个人成长/职场感悟，手绘风温暖有代入感
+    - template: watercolor
+      article_types: [opinion, long_read]
+      reason: 轻反思/观点文，水彩文艺气质
+    - template: business_info
+      article_types: [industry_analysis]
+      reason: 行业分析，商务资讯风专业理性
+    - default: minimal_bw
+      reason: 技术号兜底用极简黑白
+
+  # 情感号匹配优先级
+  emotion:
+    - template: chinese_healing_portrait
+      article_types: [emotion_story_conflict_reveal, story_conflict_reveal, intimate_relationship, family_boundary_awakening, family_of_origin, healing, long_read]
+      reason: 中年婚姻/家庭关系/晚年清醒类文章，窗边静坐的人像场景更有代入感
+    - template: warm_healing
+      article_types: [female_growth, intimate_relationship, family_of_origin, healing]
+      reason: 情感/关系/家庭/治愈，温暖治愈风最搭
+    - template: cute
+      article_types: [female_growth, healing, light_topic]
+      reason: 女性成长/治愈/轻松向，软萌可爱
+    - template: hand_drawn
+      article_types: [workplace_emotion, personal_growth]
+      reason: 职场情绪/个人成长，手绘风温暖
+    - template: watercolor
+      article_types: [opinion, long_read, experience_to_methodology]
+      reason: 观点/长文，水彩文艺
+    - template: tropical
+      article_types: [lifestyle, exploration]
+      reason: 生活方式/探索，热带自然
+    - default: warm_healing
+      reason: 情感号兜底用温暖治愈

@@ -1,0 +1,59 @@
+outline:
+  version: 1
+  topic: "儿媳妇不让我带孙子，老姐妹都笑我，但我其实松了一口气"
+  thesis: "到了这个岁数，儿女家的事少揽一点，不是没地位了，是终于不用把自己的晚年都赔进去"
+  sections:
+    - index: 1
+      title: "一、儿媳一句话，把我从带孙子的队伍里请了出来"
+      function: hook
+      reader_question: "儿媳不让婆婆带孙子，这不是被嫌弃了吗？"
+      core_viewpoint: "很多人以为不让老人带孙子是丢面子，可有时候这句话反倒把老人从一堆麻烦里放了出来"
+      evidence_need: story
+      supporting_angles: ["story", "turning_point"]
+      transition_to_next: "从老姐妹的笑话，说到自己以前为什么也把带孙子看得那么重"
+      materials: []
+    - index: 2
+      title: "二、刚开始我也觉得脸上挂不住"
+      function: story
+      reader_question: "她当时真的一点不难受吗？"
+      core_viewpoint: "当婆婆的起初难受，往往不是非要带孩子，而是怕别人说自己在儿子家没位置"
+      evidence_need: story
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "从面子上的难受，转到过去带孙子时那些没人看见的累"
+      materials: []
+    - index: 3
+      title: "三、我想起那几年带孙子的日子，心里突然不堵了"
+      function: problem
+      reader_question: "带孙子不是天伦之乐吗，为什么会松一口气？"
+      core_viewpoint: "带孙子看着是享福，真落到老人身上，常常是起早贪黑、出钱出力，还不敢有一句重话"
+      evidence_need: story
+      supporting_angles: ["story", "cost", "mistake"]
+      transition_to_next: "讲完辛苦，再说儿媳这次的边界为什么反而让我看明白"
+      materials: []
+    - index: 4
+      title: "四、她不让我带，我反倒看清了一件事"
+      function: insight
+      reader_question: "儿媳设这个边界，到底是坏事还是好事？"
+      core_viewpoint: "儿媳愿意自己安排孩子，说明她也在学着当妈；老人退出一点，儿女的小家才不会事事都扯上婆婆"
+      evidence_need: insight
+      supporting_angles: ["insight", "turning_point"]
+      transition_to_next: "从看清儿媳的边界，转到自己该怎么把日子收回来"
+      materials: []
+    - index: 5
+      title: "五、现在我把那口气咽下去，日子反而松了"
+      function: method
+      reader_question: "不带孙子以后，老人该怎么面对邻居亲戚的闲话？"
+      core_viewpoint: "别人笑两句不会替你过日子，老人把身体养好、钱袋守住、心情稳住，比抢着带孙子更实在"
+      evidence_need: method
+      supporting_angles: ["method", "insight"]
+      transition_to_next: "最后收成给同龄人的一句实在提醒"
+      materials: []
+    - index: 6
+      title: "六、到了这个岁数，别把晚年全拴在孙辈身上"
+      function: ending
+      reader_question: "那以后儿女需要帮忙，老人到底帮不帮？"
+      core_viewpoint: "孙子能疼，忙也能帮，但老人要记住一条，能搭把手就搭把手，别把自己搭进去"
+      evidence_need: insight
+      supporting_angles: ["insight", "method"]
+      transition_to_next: ""
+      materials: []

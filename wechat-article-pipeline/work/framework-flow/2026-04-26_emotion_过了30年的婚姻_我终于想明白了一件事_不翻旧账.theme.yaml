@@ -1,0 +1,42 @@
+recommended_theme: zhouzuoluo-clean
+article_subtype: warning_realization
+features:
+  article_length: medium
+  contains_table: false
+  contains_code: false
+  emotional_density: high
+candidates:
+- theme_id: zhouzuoluo-clean
+  display_name: 粥左罗极简红字（纯文字利器）
+  score: 58
+  summary: 极简纯文字排版，无背景卡片无边框无分割线，靠红色强调句和字号层级制造节奏，适合干货长文/金句密集的观点文
+  reasons:
+  - 赛道匹配 `emotion`
+  - 人设匹配 `auntie`
+  - 目标匹配 `save`
+  risks:
+  - 更适合 `opinion, emotional_story, long_read`
+  - 纯文字利器，最适合金句密集、观点密集的干货长文
+- theme_id: magazine-soft
+  display_name: 杂志柔感
+  score: 56
+  summary: 更像生活杂志的柔和分节和面状标题，适合情绪文、观点文、关系文
+  reasons:
+  - 赛道匹配 `emotion`
+  - 人设匹配 `auntie`
+  - emotional_density 偏好命中
+  risks:
+  - 更适合 `emotional_story, opinion`
+  - 更适合“像专栏而不是像教程”的排版气质
+- theme_id: emotion-warm
+  display_name: 情感暖调（退休阿姨人设）
+  score: 56
+  summary: 暖橙渐变、大字号、亲切排版，适合中老年读者群
+  reasons:
+  - 赛道匹配 `emotion`
+  - 人设匹配 `auntie`
+  - emotional_density 偏好命中
+  risks:
+  - 更适合 `emotional_story, opinion`
+  - 适合长段叙事、情绪递进和关系类表达
+recommended_from: brief

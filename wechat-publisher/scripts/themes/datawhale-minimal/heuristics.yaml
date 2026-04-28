@@ -1,0 +1,31 @@
+prefer:
+  lane:
+    - tech
+    - emotion
+  article_subtype:
+    - long_read
+    - opinion
+    - event_report
+    - tool_review
+  goals:
+    - read_finish
+    - share
+    - save
+  content_features:
+    emotional_density: medium
+    contains_image: true
+
+avoid:
+  content_features:
+    contains_heavy_code: true
+    audience_age: senior
+    emotional_density:
+      - very_high
+
+notes:
+  - 极简克制风格，适合技术社区、开源组织、活动报道、人物故事
+  - H3 粉底高亮适合子标题和关键句强调，但不宜过度使用（一篇文章建议不超过6个）
+  - 文首深色引导区适合做氛围铺垫，不适合整篇长文都使用
+  - 如果文章包含大量代码块，建议优先使用 tech-clean
+  - 图片建议全宽 + 12px 圆角，保持干净感
+  - 正文不缩进，两端对齐，行高 2em 确保中老年读者也能舒适阅读

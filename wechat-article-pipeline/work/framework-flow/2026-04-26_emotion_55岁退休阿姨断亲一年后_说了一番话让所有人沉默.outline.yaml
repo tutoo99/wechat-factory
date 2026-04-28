@@ -1,0 +1,54 @@
+outline:
+  version: 1
+  topic: "55岁退休阿姨断亲一年后，说了一番话让所有人沉默"
+  thesis: "断亲不是绝情，是中年以后最该学会的自我保护——那些消耗你的亲戚，不值得你用健康和心力去维系。"
+  sections:
+    - index: 1
+      title: "01｜退休第一年，我把所有亲戚群都退了"
+      function: "hook"
+      reader_question: "她为什么要退群？发生了什么事？"
+      core_viewpoint: "退休后突然断亲，不是一时冲动，而是攒够了失望之后的清醒。"
+      evidence_need: "story"
+      supporting_angles: ["story", "turning_point"]
+      transition_to_next: "亲戚们的反应，比断亲本身更让人心寒"
+      materials: []
+
+    - index: 2
+      title: "02｜亲戚们的嘴，比刀子还快"
+      function: "story"
+      reader_question: "亲戚们怎么说她？她怎么扛过来的？"
+      core_viewpoint: "断亲之后最先跳出来的，往往不是关心你的人，而是少了你不行的人。"
+      evidence_need: "story"
+      supporting_angles: ["story", "cost"]
+      transition_to_next: "可你们知道吗，这些年我都为他们做了什么"
+      materials: []
+
+    - index: 3
+      title: "03｜那些年，我为这个家付出了多少"
+      function: "problem"
+      reader_question: "她到底受了什么委屈？亲戚们做了什么过分的事？"
+      core_viewpoint: "亲情里的不对等，不是一天形成的——总有人付出，总有人觉得理所当然。"
+      evidence_need: "story"
+      supporting_angles: ["story", "mistake", "cost"]
+      transition_to_next: "断亲一年后，我终于想明白了一件事"
+      materials: []
+
+    - index: 4
+      title: "04｜断亲一年，我反而活得更像自己了"
+      function: "insight"
+      reader_question: "她这一年过得怎么样？后悔吗？"
+      core_viewpoint: "远离消耗你的关系，不是失去，是给自己的后半生腾出空间。"
+      evidence_need: "story"
+      supporting_angles: ["turning_point", "insight"]
+      transition_to_next: "老姐妹们，到了咱们这个岁数，有些事真得想明白"
+      materials: []
+
+    - index: 5
+      title: "05｜到了这个岁数，最该守住的是自己"
+      function: "ending"
+      reader_question: "我能从她身上学到什么？我该怎么做？"
+      core_viewpoint: "后半生最划算的投资，不是维系所有关系，而是只把心力留给值得的人。"
+      evidence_need: "insight"
+      supporting_angles: ["insight"]
+      transition_to_next: ""
+      materials: []
