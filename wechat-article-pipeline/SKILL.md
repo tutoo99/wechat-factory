@@ -165,12 +165,15 @@ python3 wechat-article-pipeline/scripts/framework_extract.py install \
   --draft wechat-article-pipeline/work/framework-extract/xxx/draft.yaml \
   --mode new
 
-# 6. 清理临时文件
+# 6. 写入飞书多维表格（不可跳过）
+# 详见下方"完成检查清单"
+
+# 7. 沉淀到 strategy-material-engine（不可跳过）
+# 详见下方"完成检查清单"
+
+# 8. 清理临时文件
 rm -rf wechat-article-pipeline/work/framework-extract/xxx
 rm -f /tmp/wx_article.html
-
-# 7. 写入飞书多维表格（不可跳过）
-# 详见下方"完成检查清单"
 ```
 
 ### 完成检查清单（拆解完成后必须逐项确认）
@@ -185,7 +188,8 @@ rm -f /tmp/wx_article.html
 [ ] 5. framework_extract.py compare → 确认新建还是更新
 [ ] 6. framework_extract.py install --mode new/update → 框架入库
 [ ] 7. 写入飞书多维表格（record-upsert，按文章链接查重）
-[ ] 8. 清理临时文件（work/framework-extract/xxx + /tmp/wx_article.html）
+[ ] 8. 导入 strategy-material-engine：source 入库 + 按复用价值提取原子素材 + 刷新索引
+[ ] 9. 清理临时文件（work/framework-extract/xxx + /tmp/wx_article.html）
 ```
 
 **第7步飞书写入规范：**
@@ -232,6 +236,94 @@ fi
 - 从原文摘取 2-3 条最有力的句子 → 金句摘录
 
 **写入失败时打印错误但不中断流程，继续处理下一篇。每篇写入后打印：`✅ 已写入飞书：<文章标题>`**
+
+**第8步素材/知识库沉淀规范：**
+
+每篇文章完成框架入库和飞书写入后，必须把同一篇解析后的 `article.md` 导入 `~/.hermes/skills/strategy-material-engine`。素材入库失败时打印错误，但不回滚已经完成的框架入库和飞书写入。
+
+### 1. 导入原文 source
+
+使用绝对路径调用素材引擎，避免 `--root` 受当前工作目录影响：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/import_source_and_route.py \
+  "<article.md路径>" \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --bucket materials \
+  --source-type article \
+  --title "<文章标题>" \
+  --author "<公众号作者>" \
+  --origin "微信公众号" \
+  --date "<发布日期或抓取日期>" \
+  --tags "wechat,公众号,爆文拆解" \
+  --link "<原始微信公众号URL>" \
+  --summary "<一句话摘要>"
+```
+
+导入后记录输出里的 source 路径，例如 `sources/materials/<slug>.md`，后续素材文件的 `source_refs` 填这个路径。
+
+### 2. 提取可复用原子素材
+
+当前会话通读正文后，只提取真正有复用价值的素材。素材数量不是验收硬指标：
+
+- 干货型 3000-5000 字文章：通常提取 4-8 条
+- 情绪文、观点短文、低密度文章：可只提 1-5 条
+- 信息密度很低时：只导入 source，不强行凑素材
+
+常见素材类型：
+
+- `method`：结构、流程、写法、SOP、表达方法
+- `insight`：反常识洞察、本质判断、认知翻转
+- `story`：可复用但需改写的故事型素材
+- `quote`：短句、金句、口语化表达
+- `data`：数字、对比、可作为论据的信息
+- `playbook`：带适用条件的具体打法
+
+每条素材先用 `new_material.py` 创建草稿：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/new_material.py \
+  "<素材标题>" \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --type method \
+  --date "<YYYY-MM-DD>"
+```
+
+然后填充完整 frontmatter 和正文。必须补齐：
+
+- `primary_claim`：素材核心主张
+- `claims`：1-3 条可复用观点
+- `tags`：文章主题、公众号、写作方向
+- `source`：原文章标题
+- `source_refs`：导入后的 `sources/materials/<slug>.md`
+- `source_uid`：尽量沿用 source frontmatter 中的 `source_uid`
+- `review_status`：默认 `draft`
+- 正文：只保留可复用的抽象素材，避免整段照搬原文
+
+边界规则：
+
+- 原文可以完整保存在 `sources/materials/`
+- `assets/materials/` 里不要复制整篇文章，不要长段搬运
+- 对公众号观点文/情绪文默认不建 case
+- 如果文章明显是实操复盘、项目拆解、商业打法，才提示可额外走 `extract_case.py`
+
+### 3. 刷新索引并验证
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/flush_indexes.py \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --all
+```
+
+刷新后用文章核心关键词验证新内容可以被写作素材搜索召回：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/search_knowledge.py \
+  "<文章核心关键词>" \
+  --mode writing \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --disable-query-rewrite
+```
 
 拆解必须同时包含两层资产：
 

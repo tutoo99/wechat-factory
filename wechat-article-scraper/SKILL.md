@@ -189,6 +189,111 @@ python3 wechat-article-pipeline/scripts/framework_extract.py prepare \
   --lane auto
 ```
 
+### 6. 沉淀到 strategy-material-engine（不可跳过）
+
+当用户贴入微信公众号链接并完成全文解析后，除了沉淀写作框架和写入飞书，还要把同一篇文章导入 `~/.hermes/skills/strategy-material-engine`，让后续写作素材召回可以复用。
+
+#### 6.1 导入原文 source
+
+使用解析后保存的 `article.md` 作为输入，原文默认进入 `sources/materials/`：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/import_source_and_route.py \
+  "<article.md路径>" \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --bucket materials \
+  --source-type article \
+  --title "<文章标题>" \
+  --author "<公众号作者>" \
+  --origin "微信公众号" \
+  --date "<发布日期或抓取日期>" \
+  --tags "wechat,公众号,爆文拆解" \
+  --link "<原始微信公众号URL>" \
+  --summary "<一句话摘要>"
+```
+
+导入后记录终端输出里的 source 路径，例如 `sources/materials/<slug>.md`，后续写素材时填入 `source_refs`。
+
+#### 6.2 提取可复用原子素材
+
+当前会话通读解析出的正文，只提取真正有复用价值的素材，不为了数量凑条目。参考密度：
+
+- 干货型 3000-5000 字文章：通常提取 4-8 条
+- 情绪文、观点短文、低密度文章：可只提 1-5 条
+- 信息密度很低时：只导入 source 也可以，不强行生成素材
+
+常见素材类型：
+
+- `method`：结构、流程、写法、SOP、表达方法
+- `insight`：反常识洞察、本质判断、认知翻转
+- `story`：可复用但需改写的故事型素材
+- `quote`：短句、金句、口语化表达
+- `data`：数字、对比、可作为论据的信息
+- `playbook`：带适用条件的具体打法
+
+每条素材先创建草稿：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/new_material.py \
+  "<素材标题>" \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --type method \
+  --date "<YYYY-MM-DD>"
+```
+
+然后写入完整素材内容。必须补齐：
+
+- `primary_claim`：素材核心主张
+- `claims`：1-3 条可复用观点
+- `tags`：文章主题、公众号、写作方向
+- `source`：原文章标题
+- `source_refs`：导入后的 `sources/materials/<slug>.md`
+- `source_uid`：尽量沿用 source frontmatter 中的 `source_uid`
+- `review_status`：默认 `draft`
+- 正文：只保留可复用的抽象素材，避免整段照搬原文
+
+边界规则：
+
+- 原文可以完整保存在 `sources/materials/`
+- `assets/materials/` 里不要复制整篇文章，不要长段搬运
+- 对公众号观点文/情绪文默认不建 case
+- 如果文章明显是实操复盘、项目拆解、商业打法，才提示可额外走 `extract_case.py`
+
+#### 6.3 刷新索引并验证
+
+原文和素材写入后刷新索引：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/flush_indexes.py \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --all
+```
+
+最后用文章核心关键词做一次写作素材搜索验证：
+
+```bash
+/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/search_knowledge.py \
+  "<文章核心关键词>" \
+  --mode writing \
+  --root /Users/naipan/.hermes/skills/strategy-material-engine \
+  --disable-query-rewrite
+```
+
+如果素材引擎入库或索引刷新失败，记录错误并继续保留已经完成的 `article.md`、框架拆解和飞书写入结果，不回滚前置步骤。
+
+### 完成检查清单
+
+每次处理微信公众号链接后，在结束前确认：
+
+```
+[ ] 1. 抓取 + Python/JS 提取正文 → 保存为 article.md
+[ ] 2. framework_extract.py prepare 已可执行或已生成拆解提示词包
+[ ] 3. 原文已导入 strategy-material-engine 的 sources/materials/
+[ ] 4. 已按复用价值提取原子素材，或明确记录“只存 source，不提素材”的原因
+[ ] 5. 已刷新 strategy-material-engine 索引
+[ ] 6. 已用 search_knowledge.py 验证新内容可被召回
+```
+
 ## 执行决策
 
 1. 先尝试方式 A（browser_navigate），如果成功就用 JS 提取
