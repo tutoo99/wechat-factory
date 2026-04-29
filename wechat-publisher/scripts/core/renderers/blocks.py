@@ -28,10 +28,11 @@ def render_paragraph(text: str, theme: Dict, is_lead: bool = False) -> str:
     spacing = theme["tokens"]["spacing"]
     colors = theme["tokens"]["colors"]
 
-    align = body_cfg.get("align") or "justify"
-    font_size = body_cfg.get("font_size") or typography.get("body_size", 17)
-    line_height = body_cfg.get("line_height") or typography.get("line_height", 2.0)
+    align = body_cfg.get("align") or typography.get("text_align") or "justify"
+    font_size = body_cfg.get("font_size") or typography.get("body_size", 15)
+    line_height = body_cfg.get("line_height") or typography.get("line_height", 1.6)
     letter_spacing = body_cfg.get("letter_spacing", typography.get("letter_spacing", 0.5))
+    text_indent = body_cfg.get("text_indent", typography.get("text_indent", 1.6))
     color = colors.get("text", "#3D2C2C")
     background = None
     padding = None
@@ -55,6 +56,7 @@ def render_paragraph(text: str, theme: Dict, is_lead: bool = False) -> str:
         "color": color,
         "letter-spacing": f"{letter_spacing}px",
         "text-align": align,
+        "text-indent": f"{text_indent}em",
         "font-family": typography.get("font_family"),
         "background": background,
         "padding": padding,

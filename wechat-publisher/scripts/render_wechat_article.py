@@ -28,7 +28,7 @@ def render_article(input_path: Path, theme_name: str) -> Tuple[Dict, Dict, str, 
     meta, body = parse_frontmatter(md_text)
     body = strip_publish_materials(body)
     html = render_markdown_to_html(body, theme)
-    issues = validate_html(html)
+    issues = validate_html(html, theme)
     return meta, theme, html, issues
 
 

@@ -97,6 +97,14 @@ def compare_feature(expected, actual) -> bool:
     return str(actual).lower() == str(expected).lower()
 
 
+def theme_body_size(theme: Dict) -> int:
+    tokens = theme.get("tokens") or {}
+    typography = tokens.get("typography") or {}
+    blocks = theme.get("blocks") or {}
+    body_text = blocks.get("body_text") or {}
+    return int(body_text.get("font_size") or typography.get("body_size") or 15)
+
+
 def score_theme(
     theme_name: str,
     theme: Dict,
@@ -151,6 +159,30 @@ def score_theme(
         if key in features and compare_feature(expected, features.get(key)):
             score -= 10
             risks.append(f"{key} 与该主题偏好相反")
+
+    if features.get("audience_age") == "senior":
+        body_size = theme_body_size(theme)
+        if body_size >= 17:
+            score += 10
+            reasons.append("正文字号适合中老年阅读")
+        else:
+            score -= 8
+            risks.append("中老年读者正文偏小，建议使用 17px 正文字号主题")
+        if "auntie" in persona_fit:
+            score += 6
+            reasons.append("中老年/阿姨人设适配")
+        senior_text = " ".join(
+            str(part)
+            for part in [
+                manifest.get("display_name"),
+                manifest.get("description"),
+                " ".join(manifest.get("authoring_notes") or []),
+            ]
+            if part
+        )
+        if "中老年" in senior_text or "退休阿姨" in senior_text:
+            score += 4
+            reasons.append("主题明确标注中老年读者")
 
     if features.get("article_length") == "long":
         if article_subtype in {"mistake_breakdown", "long_read"} or "long_read" in article_fit:

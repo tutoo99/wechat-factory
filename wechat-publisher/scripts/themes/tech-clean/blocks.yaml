@@ -2,6 +2,7 @@ body_text:
   enabled: true
   variant: default
   align: justify
+  text_indent: 1.6
 
 lead_text:
   enabled: true

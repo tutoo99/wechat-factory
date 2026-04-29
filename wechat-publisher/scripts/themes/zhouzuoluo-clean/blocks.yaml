@@ -5,6 +5,7 @@ body_text:
   line_height: 1.75
   letter_spacing: 0.544
   align: justify
+  text_indent: 1.6
   margin_x: 8
   description: 纯文字段落，无背景无边框，靠字号和行高自然呼吸
 

@@ -995,7 +995,17 @@ def fetch_materials_for_outline_sections(
     enriched = dict(outline or {})
     sections = [dict(section) for section in (outline.get("sections") or [])]
     enriched["sections"] = sections
+    recall_meta = {
+        "status": "attempted",
+        "sections_total": len(sections),
+        "sections_with_materials": 0,
+        "materials_total": 0,
+        "reason": "",
+    }
     if not search_script.exists():
+        recall_meta["status"] = "skipped"
+        recall_meta["reason"] = "search_materials.py not found"
+        enriched["section_materials_recall"] = recall_meta
         return enriched
 
     global_claims = set()
@@ -1155,6 +1165,16 @@ def fetch_materials_for_outline_sections(
                 picked.pop("_score", None)
                 section_materials.append(picked)
         section["materials"] = section_materials
+        if section_materials:
+            recall_meta["sections_with_materials"] += 1
+            recall_meta["materials_total"] += len(section_materials)
+
+    if recall_meta["materials_total"] <= 0:
+        recall_meta["status"] = "attempted_empty"
+        recall_meta["reason"] = "no trusted section materials matched"
+    else:
+        recall_meta["status"] = "matched"
+    enriched["section_materials_recall"] = recall_meta
 
     if debug:
         print("# outline-material-query-debug")
@@ -1175,6 +1195,24 @@ def fetch_materials_for_outline_sections(
                 print("  error: %s" % row["error"])
 
     return enriched
+
+
+def build_section_materials_recall_meta(outline: dict, status: str = "unknown", reason: str = "") -> dict:
+    sections = (outline or {}).get("sections") or []
+    materials_total = 0
+    sections_with_materials = 0
+    for section in sections:
+        materials = section.get("materials") or []
+        if materials:
+            sections_with_materials += 1
+            materials_total += len(materials)
+    return {
+        "status": status,
+        "sections_total": len(sections),
+        "sections_with_materials": sections_with_materials,
+        "materials_total": materials_total,
+        "reason": reason,
+    }
 
 
 def infer_article_subtype(framework: Dict, payload: Dict) -> str:
@@ -1204,6 +1242,8 @@ def infer_theme_features(brief: Dict, draft_path: Path = None) -> Dict:
     features["contains_table"] = "list" in material_types
     features["contains_code"] = lane == "tech"
     features["emotional_density"] = "high" if lane == "emotion" else "low"
+    if lane == "emotion":
+        features["audience_age"] = "senior"
 
     if draft_path and draft_path.exists():
         source_features = rt.analyze_source(draft_path)
@@ -1662,6 +1702,22 @@ def build_outline_guidance(outline: dict) -> str:
     if not outline or not outline.get("sections"):
         return ""
     lines = ["## 大纲 + 分节素材指引", ""]
+    recall_meta = outline.get("section_materials_recall") or {}
+    if recall_meta:
+        lines.extend(
+            [
+                "### 分节素材召回状态",
+                "- status: `%s`" % (recall_meta.get("status") or "unknown"),
+                "- sections_with_materials: %s/%s"
+                % (recall_meta.get("sections_with_materials", 0), recall_meta.get("sections_total", 0)),
+                "- materials_total: %s" % recall_meta.get("materials_total", 0),
+            ]
+        )
+        if recall_meta.get("reason"):
+            lines.append("- reason: %s" % recall_meta.get("reason"))
+        if recall_meta.get("status") in {"skipped", "attempted_empty"}:
+            lines.append("- 注意：本次分节素材不足，正文必须优先使用 persona 真实经历，不要编造来源或假案例")
+        lines.append("")
     if outline.get("thesis"):
         lines.extend(["整篇 thesis：%s" % outline["thesis"], ""])
     for section in outline.get("sections") or []:
@@ -2198,6 +2254,26 @@ def print_selection_result(
     if render_result:
         print("- article: `%s`" % render_result["html_path"])
     print("")
+    brief_data = {}
+    try:
+        with open(brief_path, "r", encoding="utf-8") as f:
+            brief_data = yaml.safe_load(f) or {}
+    except Exception:
+        brief_data = {}
+    recall_meta = ((brief_data.get("outline") or {}).get("section_materials_recall") or {})
+    if recall_meta:
+        print("## 分节素材召回")
+        print("- status: `%s`" % (recall_meta.get("status") or "unknown"))
+        print(
+            "- sections_with_materials: %s/%s"
+            % (recall_meta.get("sections_with_materials", 0), recall_meta.get("sections_total", 0))
+        )
+        print("- materials_total: %s" % recall_meta.get("materials_total", 0))
+        if recall_meta.get("reason"):
+            print("- reason: %s" % recall_meta.get("reason"))
+        if recall_meta.get("status") in {"skipped", "attempted_empty"}:
+            print("- warning: 本次正文将缺少素材库支撑，请优先使用 persona 真实经历，不要编造来源或假案例")
+        print("")
     print("## 写作抓手")
     for item in data.get("section_flow") or []:
         print("- %s" % item)
@@ -2281,6 +2357,11 @@ def main() -> None:
     args = parser.parse_args()
     if args.prepare_outline and args.generate_draft and not args.outline_file:
         raise ValueError("--prepare-outline 只准备大纲指令包；如需生成正文，请先传入 --outline-file")
+    if args.outline_file and args.no_materials:
+        raise ValueError(
+            "--outline-file 回传阶段默认必须执行分节素材召回；不要同时传 --no-materials。"
+            "如果确实要跳过素材库，请先确认这是有意为之，再移除 --outline-file 或改用人工补充素材。"
+        )
     payload = normalize_inputs(args)
 
     if args.code in {"8", "9", "10", "11"}:
@@ -2363,6 +2444,14 @@ def main() -> None:
                     limit_per_section=1 if lane == "tech" else 2,
                     debug=bool(payload.get("debug_material_queries")),
                 )
+            else:
+                outline["section_materials_recall"] = build_section_materials_recall_meta(
+                    outline,
+                    status="skipped",
+                    reason="--no-materials",
+                )
+            if "section_materials_recall" not in outline:
+                outline["section_materials_recall"] = build_section_materials_recall_meta(outline, status="unknown")
             brief["outline"] = outline
         theme_recommendation = recommend_themes_for_brief(
             brief=brief,

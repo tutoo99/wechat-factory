@@ -1,0 +1,25 @@
+# 飞书多维表格配置 - 爆文拆解库
+base_token: DgRabMs9oauhvssnsNhc7622nld
+table_id: tblGpJvzPZvN0Md1
+table_name: 爆文拆解
+base_url: https://dcnosj8pdidr.feishu.cn/base/DgRabMs9oauhvssnsNhc7622nld
+
+# 字段映射：skill内部字段名 → 飞书字段名
+field_mapping:
+  article_title: 文章标题
+  account_name: 公众号
+  article_url: 文章链接
+  analysis_date: 拆解日期
+  track: 赛道
+  framework: 使用框架
+  title_formula: 标题公式
+  hook_pattern: Hook模式
+  emotion_trigger: 情绪触发
+  suitable_topics: 适合选题        # 多选
+  structure_type: 结构类型
+  target_account: 适合目标号
+  viral_level: 爆文级别
+  reference_value: 参考价值
+  notes: 拆解备注
+  golden_quotes: 金句摘录
+  title_template: 可复用标题模板

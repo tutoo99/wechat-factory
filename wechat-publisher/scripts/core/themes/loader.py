@@ -50,12 +50,14 @@ DEFAULT_THEME = {
         },
         "typography": {
             "font_family": "'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,sans-serif",
-            "body_size": 17,
+            "body_size": 15,
             "lead_size": 18,
             "caption_size": 13,
             "code_size": 13,
-            "line_height": 2.0,
+            "line_height": 1.6,
             "letter_spacing": 0.5,
+            "text_align": "justify",
+            "text_indent": 1.6,
             "h2_size": 20,
             "h3_size": 17,
             "footnote_size": 12,
@@ -75,7 +77,7 @@ DEFAULT_THEME = {
         "shadow": {"card": "none", "image": "none"},
     },
     "blocks": {
-        "body_text": {"enabled": True, "variant": "default", "align": "justify"},
+        "body_text": {"enabled": True, "variant": "default", "align": "justify", "text_indent": 1.6},
         "lead_text": {"enabled": True, "variant": "spacious", "font_size_delta": 1},
         "section_title": {
             "enabled": True,

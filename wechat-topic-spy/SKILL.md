@@ -211,6 +211,76 @@ description: >
 最推荐选题X，理由：xxx
 ```
 
+## 第5步：拆解结果自动写入飞书
+
+每篇爆文分析完成后，将拆解的关键信息自动写入飞书多维表格。
+
+### 配置
+
+读取 `references/feishu-config.yaml` 获取 base_token、table_id 和字段映射。
+
+### 写入时机
+
+在第2步（分析爆文数据）中，每篇文章分析完毕后立即写入。不要等所有文章都分析完再批量写入——边分析边写入，避免中途失败丢失数据。
+
+### 写入命令
+
+`record-upsert` 没有按业务键自动查重的功能（传 `--record-id` 走更新，不传走创建）。所以必须先搜索再条件写入：
+
+```bash
+# Step 1: 搜索是否已存在（按文章链接关键词搜索）
+EXISTING=$(lark-cli base +record-search \
+  --base-token <base_token> \
+  --table-id <table_id> \
+  --json '{"keyword":"<URL中的唯一片段>","search_fields":["文章链接"]}' \
+  -q '.data.items[0].record_id')
+
+# Step 2: 存在则更新，不存在则创建
+if [ -n "$EXISTING" ]; then
+  lark-cli base +record-upsert \
+    --base-token <base_token> --table-id <table_id> \
+    --record-id "$EXISTING" --json '<JSON对象>'
+else
+  lark-cli base +record-upsert \
+    --base-token <base_token> --table-id <table_id> \
+    --json '<JSON对象>'
+fi
+```
+
+用 URL 中唯一片段（如微信文章的 `s/xxx` 部分）作为搜索关键词，避免长 URL 匹配问题。
+
+### 写入字段
+
+```json
+{
+  "文章标题": "原标题",
+  "公众号": "公众号名称",
+  "文章链接": "https://mp.weixin.qq.com/...",
+  "拆解日期": "2026-04-29",
+  "赛道": "emotion",
+  "使用框架": "框架ID 框架名称",
+  "标题公式": "反常识钩子+痛点描述",
+  "可复用标题模板": "为什么{}的人，都{}了",
+  "Hook模式": "反常识开头+自黑",
+  "情绪触发": "焦虑+共鸣",
+  "结构类型": "三层递进",
+  "适合选题": ["情绪共鸣", "认知升级"],
+  "适合目标号": "emotion-female_growth",
+  "爆文级别": "10万+",
+  "参考价值": "高-可直接模仿",
+  "金句摘录": "摘录的金句",
+  "拆解备注": "核心发现和可借鉴点"
+}
+```
+
+### 注意事项
+
+- `适合选题` 是多选字段，值必须是数组
+- `赛道`、`结构类型`、`爆文级别`、`参考价值`、`适合目标号` 的值必须是字段中已存在的选项，不在选项内的值会被忽略。如果需要新增选项，先用 `+field-update` 添加选项再写入
+- `拆解日期` 格式为 `yyyy-MM-dd`
+- 写入失败时打印错误信息但不中断流程，继续分析下一篇文章
+- 每篇文章写入后打印确认信息：`✅ 已写入飞书：<文章标题>`
+
 ## 选题库管理
 
 每日选题自动追加到选题库：`~/.hermes/output/wechat/<账号>/topics/topic-database.md`

@@ -26,7 +26,7 @@ colors:
 
 typography:
   font_family: "system-ui,-apple-system,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Hiragino Sans GB,Microsoft YaHei UI,Microsoft YaHei,Arial,sans-serif"
-  body_size: 15
+  body_size: 17
   lead_size: 17
   caption_size: 13
   code_size: 13

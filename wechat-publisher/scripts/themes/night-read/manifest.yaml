@@ -1,7 +1,7 @@
 schema_version: 1
 id: night-read
 display_name: 每晚一卷书（深红标题·阅读感）
-description: 白底正文+深红棕色标题+灰影引用卡+Cochin结尾装饰，15px正文1px字间距，适合阅读号/成长类/观点类长文
+description: 白底正文+深红棕色标题+灰影引用卡+Cochin结尾装饰，17px正文1px字间距，适合阅读号/成长类/观点类长文
 status: active
 lane_fit:
   - emotion
@@ -26,4 +26,4 @@ authoring_notes:
   - Cochin-BoldItalic的"- End -"结尾装饰，适合叙事/故事类结尾
   - 整体配色克制：白底+黑正文+深红标题+暖灰辅助，没有花哨的强调色
   - 适合人物故事、观点论述、金句密集的阅读类内容
-  - 15px正文字号偏小，配合1.75em行高和1px字间距保证舒适度
+  - 17px正文字号适合目标读者偏大的阅读场景，配合1.75em行高和1px字间距保证舒适度

@@ -23,7 +23,7 @@ colors:
 
 typography:
   font_family: "'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,sans-serif"
-  body_size: 16
+  body_size: 17
   lead_size: 18
   caption_size: 13
   code_size: 13

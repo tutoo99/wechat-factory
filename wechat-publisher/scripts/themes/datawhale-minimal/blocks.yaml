@@ -2,7 +2,8 @@ body_text:
   enabled: true
   variant: default
   align: justify
-  font_size: 15
+  text_indent: 1.6
+  font_size: 17
   line_height: 2.0
 
 lead_text:
@@ -10,7 +11,7 @@ lead_text:
   variant: dark-intro
   background: "#757576"
   color: "#FFFFFF"
-  font_size: 15
+  font_size: 17
   description: 文首深色卡片区，用于引导/氛围铺垫，白字深底
 
 section_title:

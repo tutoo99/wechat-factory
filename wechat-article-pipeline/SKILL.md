@@ -61,7 +61,85 @@ description: >
 
 ## 爆文拆解沉淀框架（半自动）
 
-当用户说“拆一下这篇爆文”“拆解这篇，存到框架库”“把这篇沉淀成框架”时，优先使用半自动 CLI，而不是只靠会话手工写 YAML。
+当用户说"拆一下这篇爆文""拆解这篇，存到框架库""把这篇沉淀成框架"时，优先使用半自动 CLI，而不是只靠会话手工写 YAML。
+
+### 第0步：抓取微信文章全文
+
+**`browser_navigate` 打开微信文章会超时，必须用 curl 抓取再解析。**
+
+```bash
+curl -sL -o /tmp/wx_article.html --max-time 15 "https://mp.weixin.qq.com/s/xxx" \
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+```
+
+然后用 Python HTML parser 提取标题、作者、正文（不要用 `wechat-article-scraper`，那个走浏览器自动化，会超时）：
+
+```python
+from html.parser import HTMLParser
+
+class WxParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_content = False
+        self.in_title = False
+        self.in_author = False
+        self.title = ""
+        self.author = ""
+        self.paragraphs = []
+        self.current = ""
+        self.in_section = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        if attrs_dict.get("id") == "activity-name":
+            self.in_title = True
+        elif attrs_dict.get("id") == "js_name":
+            self.in_author = True
+        elif attrs_dict.get("id") == "js_content":
+            self.in_content = True
+        elif tag in ("p", "br", "section") and self.in_content:
+            if tag == "section":
+                self.in_section = True
+            if self.current.strip():
+                self.paragraphs.append(self.current.strip())
+                self.current = ""
+
+    def handle_endtag(self, tag):
+        if tag in ("span",) and self.in_title:
+            self.in_title = False
+        elif tag in ("a",) and self.in_author:
+            self.in_author = False
+        elif tag == "section" and self.in_section:
+            self.in_section = False
+            if self.current.strip():
+                self.paragraphs.append(self.current.strip())
+                self.current = ""
+        elif tag == "p" and self.in_content:
+            if self.current.strip():
+                self.paragraphs.append(self.current.strip())
+                self.current = ""
+
+    def handle_data(self, data):
+        if self.in_title:
+            self.title += data
+        elif self.in_author:
+            self.author += data
+        elif self.in_content:
+            self.current += data
+
+with open("/tmp/wx_article.html", "r", encoding="utf-8") as f:
+    html = f.read()
+p = WxParser()
+p.feed(html)
+print(f"标题: {p.title.strip()}")
+print(f"作者: {p.author.strip()}")
+for para in p.paragraphs:
+    print(para)
+```
+
+提取后保存为 `article.md`（纯 Markdown 正文，去掉页面底部 JS 垃圾），再进入 prepare 步骤。
+
+### 半自动 CLI 步骤
 
 ```bash
 # 1. 生成拆解提示词包
@@ -86,7 +164,74 @@ python3 wechat-article-pipeline/scripts/framework_extract.py compare \
 python3 wechat-article-pipeline/scripts/framework_extract.py install \
   --draft wechat-article-pipeline/work/framework-extract/xxx/draft.yaml \
   --mode new
+
+# 6. 清理临时文件
+rm -rf wechat-article-pipeline/work/framework-extract/xxx
+rm -f /tmp/wx_article.html
+
+# 7. 写入飞书多维表格（不可跳过）
+# 详见下方"完成检查清单"
 ```
+
+### 完成检查清单（拆解完成后必须逐项确认）
+
+每次爆文拆解完成后，在结束之前必须逐项确认以下清单。任何一项未完成，任务不算结束。
+
+```
+[ ] 1. curl 抓取 + Python 提取正文 → 保存为 article.md
+[ ] 2. framework_extract.py prepare → 生成 extract.prompt.md + draft.yaml
+[ ] 3. 读取 extract.prompt.md → 生成 draft.yaml（用 yaml.dump，不要手写）
+[ ] 4. framework_extract.py validate → 校验通过
+[ ] 5. framework_extract.py compare → 确认新建还是更新
+[ ] 6. framework_extract.py install --mode new/update → 框架入库
+[ ] 7. 写入飞书多维表格（record-upsert，按文章链接查重）
+[ ] 8. 清理临时文件（work/framework-extract/xxx + /tmp/wx_article.html）
+```
+
+**第7步飞书写入规范：**
+
+读取 `wechat-topic-spy/references/feishu-config.yaml` 获取配置，按以下流程执行：
+
+```bash
+# 搜索是否已存在（用 URL 中 s/xxx 部分作为关键词）
+EXISTING=$(lark-cli base +record-search \
+  --base-token <base_token> \
+  --table-id <table_id> \
+  --json '{"keyword":"<URL唯一片段>","search_fields":["文章链接"]}' \
+  -q '.data.items[0].record_id')
+
+# 存在则更新，不存在则创建
+if [ -n "$EXISTING" ]; then
+  lark-cli base +record-upsert \
+    --base-token <base_token> --table-id <table_id> \
+    --record-id "$EXISTING" --json '<JSON对象>'
+else
+  lark-cli base +record-upsert \
+    --base-token <base_token> --table-id <table_id> \
+    --json '<JSON对象>'
+fi
+```
+
+写入字段从 draft.yaml 中提取，映射关系见 feishu-config.yaml 的 field_mapping：
+- `title` → 文章标题
+- `source_article.account` → 公众号
+- `source_article.url` → 文章链接
+- `source_article.extracted_date` → 拆解日期
+- `lane` → 赛道
+- `id + name` → 使用框架
+- `title_pattern.formula` → 标题公式
+- `title_pattern.reusable_templates` → 可复用标题模板
+- `hook_pattern` → Hook模式
+- `title_pattern.emotion_trigger` → 情绪触发
+- `section_flow` → 结构类型（用简短描述，如"时间线叙事+视角切换+归因翻转"）
+- `suitable_topics` → 适合选题（数组）
+- `lane` → 适合目标号
+- 爆文级别 → 待填（用户回填或后续补充）
+- `summary` 或 AI 判断 → 参考价值
+- `extraction_notes` → 拆解备注
+- 从原文摘取 2-3 条最有力的句子 → 金句摘录
+
+**写入失败时打印错误但不中断流程，继续处理下一篇。每篇写入后打印：`✅ 已写入飞书：<文章标题>`**
 
 拆解必须同时包含两层资产：
 
@@ -205,7 +350,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
   --code 1 \
   --outline-file wechat-article-pipeline/work/framework-flow/xxx.outline.yaml
 
-# 已确认标题后（降级）：跳过素材库召回，brief 中 auto_materials 为空
+# 已确认标题后（降级）：跳过整篇素材召回，不要和 --outline-file 混用
 python3 wechat-article-pipeline/scripts/framework_flow.py \
   --channel tech \
   --topic "我把公众号发布系统重构成 channel 模型" \
@@ -291,7 +436,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
    - **Query 扩写**：无 outline 时，`fetch_materials_for_brief()` 仍按旧逻辑从 topic + section_flow + required_materials 提取核心语义片段，与 section 维度关键词组合生成多个 query。传入 outline 时，改用 `fetch_materials_for_outline_sections()` 做按节召回。
    - **类型软偏好**：不再用 `--type` 硬过滤（如 `material_types=['case']` 不再挡掉 method/insight）。material_types 转为 `--prefer-type` soft bonus，框架 required_materials 匹配的 prefer_type 优先级更高。这样高相关的非目标类型素材不会被排除。
    - **隐私防护（自动执行）**：同一来源最多召回 1 条（`--max-per-source 1`），防止整文还原导致抄袭风险。注入 brief 的只是观点方向，LLM 会用自己的表达重新阐述。
-   - **素材库降级开关**：`framework_flow.py` 支持 `--no-materials` 参数。传入后跳过整体召回和分节召回；如果同时传 `--outline-file --no-materials`，仍生成大纲驱动 prompt，但每节 materials 为空。
+   - **素材库降级开关**：`framework_flow.py` 支持 `--no-materials` 参数。它只能用于不回传 outline 的降级流程；`--outline-file` 回传阶段默认必须执行分节素材召回，不能同时传 `--no-materials`。脚本会在 brief、prompt 和终端输出中记录 `section_materials_recall` 状态，避免误以为已经带素材写稿。
    - 如果用户通过 `--extra-materials` 手动提供了素材，与自动召回的结果合并，手动素材优先
    - **兜底方案（无召回时）**：不硬塞不相关素材。brief 的 auto_materials 为空列表，写稿 prompt 标注"素材供参考，不适用可以不用"。LLM 本身有知识储备，没有外部素材也能写合格内容。素材库的作用是提升质量，不是救命。
    - 如需手动召回：`/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/search_materials.py "<query>" --root /Users/naipan/.hermes/skills/strategy-material-engine --limit 5 --max-per-source 1`
@@ -306,7 +451,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 12. 做违禁词排查（使用 `banned-word-guard`），发现违禁词自动替换为安全表达
 13. 根据 `channel + framework + goal + 内容特征` 推荐排版主题（Top 3）
 14. 最后补齐发布素材：
-   - 封面风格选择（必须让用户从 `accent-bar` / `火山引擎文生图` 中选择；火山引擎不再推荐风格，直接由当前会话 LLM 生成场景化提示词后调 API）
+   - 封面风格选择（必须让用户从 `accent-bar` / `AI 文生图 - 火山引擎` / `AI 文生图 - SenseNova` 中选择；AI 文生图不再推荐风格，直接由当前会话 LLM 生成场景化提示词后用 `generate_cover_ai.py --provider <provider>` 调 API）
    - 标题备选（必须符合人设配置中的标题风格）
    - 摘要
    - 导语
@@ -524,6 +669,13 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 - 每个小节标题都要概括该节核心信息
 - 不要出现只有编号、没有标题文字的小节
 - 小标题语气要自然，避免太像 PPT 提纲
+- 正文字号默认 15px
+- 面向中老年读者的号，正文字号使用 17px
+- 正文段落默认两端对齐：`text-align: justify`
+- 正文段落默认首行缩进：`text-indent: 1.6em`
+- 正文行间距默认：`line-height: 1.6`
+
+中老年读者优先按 `audience_age=senior`、`persona=auntie`、`channel=emotion` 判断。
 
 ## 踩坑记录
 
@@ -540,9 +692,47 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 
 已修复（2026.4.21）：在 `count_keyword_hits()` 中加了 `isinstance(word, str)` 过滤。如果未来重新遇到，检查框架库 YAML 里 `keywords` 列表是否有未加引号的纯数字。
 
+### draft.yaml 手写 YAML 容易解析失败
+
+用 `write_file` 手写 draft.yaml 时，YAML list item 中的引号、冒号、特殊符号经常导致 `yaml.safe_load` 解析失败（报 `expected <block end>, but found '<scalar>'`）。常见触发场景：constraints 列表里包含 `\"写在最后\"`、`（"不是A，而是B"）` 等嵌套引号。
+
+**解决方案：用 Python `yaml.dump()` 生成 draft.yaml，不要手写。**
+
+```python
+import yaml
+data = { ... }
+with open("draft.yaml", "w") as f:
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+```
+
+这样 Python 会自动处理所有引号转义和特殊字符，保证 YAML 合法。生成后再跑 validate 和 compare。
+
+### 严禁 `--no-materials` 与 `--outline-file` 同时使用
+
+2026.4.29 实际犯错：回传 outline.yaml 时顺手加了 `--no-materials`，导致所有 section 的素材召回全部跳过，每个 section 都是"无（素材库未找到可信匹配）"。文章变成纯靠 LLM 自己组织论证，没有经过素材库支撑。
+
+**正确做法：**
+- 传入 `--outline-file` 时，绝对不加 `--no-materials`。脚本会自动按节做素材召回。
+- `--no-materials` 只用于"不回传 outline 的降级流程"（比如用户只要一个 quick brief，不需要分节素材）。
+- 写稿前检查 prompt.md 里的"分节素材指引"部分，如果每个 section 都是"无"，说明素材召回被跳过了，需要重新跑一遍。
+
 ### publish_wechat.py 封面图上传可能超时
 
-封面图上传到微信服务器时，如果网络慢可能超过 30 秒超时。脚本会尝试继续操作（选中图片→点确认），但封面可能未真正上传成功。发布后建议手动在草稿箱确认封面是否正常。
+封面图上传到微信服务器时，如果网络慢可能超过 60 秒超时。脚本会尝试继续操作（选中图片→点确认），但封面可能未真正上传成功。发布后建议手动在草稿箱确认封面是否正常。连续两篇文章（2026.4.29）都出现这个超时，大概率是网络/微信服务器侧的问题，不是偶发。
+
+### publish_wechat.py Firefox 残留进程导致启动失败
+
+如果上一次发布脚本异常退出（超时被kill、Ctrl+C中断等），Firefox/geckodriver 进程可能残留。下次启动时报错：`invalid session id: WebDriver session does not exist, or is not active`。
+
+**解决方案：发布前清理残留进程**
+
+```bash
+pkill -f "firefox.*mp__qiaosan" 2>/dev/null
+pkill -f "geckodriver" 2>/dev/null
+sleep 2
+```
+
+注意 `mp__qiaosan` 是 profile 目录的特征字符串，只杀对应 profile 的 Firefox，不要 `pkill -9 firefox` 杀掉用户自己正在用的 Firefox。
 
 ## Invocation Hints
 

@@ -1,17 +1,18 @@
 body_text:
   enabled: true
   variant: spacious-flow
-  font_size: 15
+  font_size: 17
   line_height: 1.75
   letter_spacing: 1
-  align: left
+  align: justify
+  text_indent: 1.6
   margin_x: 8
-  description: 疏朗正文流，15px+1px字间距，左对齐
+  description: 疏朗正文流，17px+1px字间距，两端对齐
 
 lead_text:
   enabled: true
   variant: same-as-body
-  font_size: 15
+  font_size: 17
   description: 导语与正文同风格
 
 section_title:

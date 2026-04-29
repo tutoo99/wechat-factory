@@ -75,18 +75,19 @@ python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/render_with_rec
 | 样式 | 说明 | 推荐场景 |
 |------|------|---------|
 | `accent-bar` | 深色底+红色强调条 | 技术号 |
-| **火山引擎文生图** | 当前会话 LLM 生成场景化提示词，再调用火山 API | 需要高质量封面时 |
+| **AI 文生图 - 火山引擎** | 当前会话 LLM 生成场景化提示词，再调用火山 API | 需要高质量封面时 |
+| **AI 文生图 - SenseNova** | 当前会话 LLM 生成场景化提示词，再调用 SenseNova API | 火山替代方案或指定使用 SenseNova 时 |
 
 用户选择 `accent-bar` 本地风格时，走 Pillow 生成逻辑。
 
-用户选择**火山引擎文生图**时，走以下流程：
+用户选择 **AI 文生图 - 火山引擎** 或 **AI 文生图 - SenseNova** 时，走以下统一流程：
 
 1. 从 `final.md` 的 YAML frontmatter 读取 `channel`、`framework`（作为 article_type）、`title`、`cover_text`（封面短文案）
 2. 当前 AI CLI 会话读取 `final.md` 的正文和 frontmatter，直接生成一个场景化完整生图提示词，保存为 `final.cover.prompt.md`
-3. 用 `--prompt-file final.cover.prompt.md` 交给火山引擎生成图片
+3. 用 `generate_cover_ai.py --provider <provider>` 和 `--prompt-file final.cover.prompt.md` 交给对应文生图 provider 生成图片
 4. 下载图片保存为 `cover.jpg`
 
-**重要：火山封面必须优先走“当前会话 LLM 生成完整提示词”模式。** 脚本只负责读取提示词和调用火山，不在脚本里内置 LLM 调用。
+**重要：封面必须优先走"当前会话 LLM 生成完整提示词"模式。** 脚本只负责读取提示词和调用 API，不在脚本里内置 LLM 调用。
 
 场景化封面提示词必须满足：
 
@@ -94,28 +95,29 @@ python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/render_with_rec
 - 场景里要有目标读者能代入的人、动作、环境和情绪张力
 - 画面要切中读者心理防线，例如焦虑、委屈、醒悟、逃避、失控、边界感、主动权丧失等
 - 可见文字只允许出现 `cover_text` 或主标题这一组文字，不要出现其他说明词、风格名、公众号、封面、比例、构图等描述性文字
-- 生图提示词里不要写 `2.35:1`、`900×383` 这类比例或尺寸字面量，避免模型把它们画进图片
-- 提示词只描述横向宽幅公众号头图；具体比例由火山 API 的 `size` 参数强制要求
-- 不做下载后裁剪/缩放；如果火山返回尺寸不符合请求尺寸，脚本直接报错
+- 生图提示词里不要写 `2.35:1`、`1880x800`、`2752x1536` 这类比例或尺寸字面量，避免模型把它们画进图片
+- 提示词只描述横向宽幅公众号头图；具体比例由文生图 API 的 `size` 参数强制要求
+- 不做下载后裁剪/缩放；如果 provider 返回尺寸不符合请求尺寸，脚本直接报错
 - 明确横版公众号封面约束：单张图、标题清晰可读、无水印、无 logo、无多余文字
 
 ```bash
-VOLCENGINE="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/generate_cover_volcengine.py"
+COVER_AI="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/generate_cover_ai.py"
 
 # 第1步：当前会话 LLM 生成完整场景化提示词
 # 输出文件：final.cover.prompt.md
 
 # 第2步：用外部完整提示词生成，默认请求 1880x800（2.35:1）
-python3 $VOLCENGINE final.md -o cover.jpg --prompt-file final.cover.prompt.md
+python3 $COVER_AI final.md -o cover.jpg --prompt-file final.cover.prompt.md --provider sensenova
+python3 $COVER_AI final.md -o cover.jpg --prompt-file final.cover.prompt.md --provider volcengine
 
 # 如需手动指定尺寸，必须保持 2.35:1
-python3 $VOLCENGINE final.md -o cover.jpg --prompt-file final.cover.prompt.md --size 1880x800
+python3 $COVER_AI final.md -o cover.jpg --prompt-file final.cover.prompt.md --provider sensenova --size 1880x800
 
-# 只检查最终提示词，不调用火山 API
-python3 $VOLCENGINE final.md --prompt-file final.cover.prompt.md --dry-run
+# 只检查最终提示词和 provider 配置，不调用 API
+python3 $COVER_AI final.md --prompt-file final.cover.prompt.md --provider sensenova --dry-run
 ```
 
-**环境变量**：`ARK_API_KEY`（火山引擎 API key，需在 shell 中 export）。`--dry-run` 不需要 API key。
+**环境变量**：火山引擎使用 `ARK_API_KEY`，SenseNova 使用 `SENSENOVA_API_KEY`（在 `~/.zshrc` 中 export）。`--dry-run` 不需要 API key。
 
 **重要约束：生成封面图后不要调用视觉模型检查效果。** 脚本输出 `[ok] 封面已下载` 就说明成功了，让用户自己去文件夹看即可。
 
@@ -126,7 +128,7 @@ COVER="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/generate_cover.p
 python3 $COVER final.md -o cover.jpg -s accent-bar
 ```
 
-**火山输出尺寸：默认 `1880x800`，比例严格为 2.35:1。** 这是 API 参数，不要写进生图提示词。
+**AI 文生图输出尺寸：默认 `1880x800`，比例严格为 2.35:1。** 这是 API 参数，不要写进生图提示词。
 
 
 
@@ -288,6 +290,14 @@ themes/<theme-id>/
 - `heuristics.yaml`：未来主题推荐器的偏好规则
 - `preview.md`：预览与回归测试样例
 
+正文排版沉淀要求：
+
+- 普通号正文默认 `15px`
+- 面向中老年读者的号正文使用 `17px`
+- 正文段落默认 `text-align: justify`
+- 正文段落默认 `text-indent: 1.6em`
+- 正文行间距默认 `line-height: 1.6`
+
 兼容说明：
 
 - `md_to_styled_html.py` 仍可继续使用
@@ -366,20 +376,20 @@ title: 文章标题
 ---
 ```
 
-### 火山引擎文生图：模型会把提示词描述性文字渲染到画面上
+### AI 文生图：模型会把提示词描述性文字渲染到画面上
 
 **现象**：生成的封面图中出现了提示词里的描述性文字，例如"公众号""封面图""2.35:1""构图"等，与主标题混在一起变成类似"外包科技公众号2.35:1"的错误内容。
 
-**根因**：doubao-seedream-4 等文生图模型会将提示词中的所有文字信息视为"要在画面上渲染的文字"，无法区分"指令性描述"和"要显示的标题文字"。
+**根因**：doubao-seedream-4、SenseNova 等文生图模型可能会将提示词中的所有文字信息视为"要在画面上渲染的文字"，无法区分"指令性描述"和"要显示的标题文字"。
 
 **已修复**（2026.4.24）：
 1. **当前会话 LLM 生成完整提示词**：不再走模板推荐和脚本内置风格，提示词由当前 AI CLI 会话结合正文生成。
-2. **generate_cover_volcengine.py 的 sanitize_prompt() + size 校验**：调用火山前清理提示词里的比例/尺寸字面量；通过 API `size` 参数请求 `1880x800`；下载后只校验尺寸，不做裁剪/缩放。
+2. **generate_cover_ai.py 的 sanitize_prompt() + size 校验**：调用 provider 前清理提示词里的比例/尺寸字面量；通过 API `size` 参数请求 `1880x800`；下载后只校验尺寸，不做裁剪/缩放。
 3. **提示词约束**：只允许画面出现 `cover_text` 或主标题这一组文字，其他说明词、比例、尺寸、风格名都不要写成可被渲染的文字。
 
 **教训**：给文生图模型写提示词时，任何不希望出现在画面上的文字都不要写进 prompt。比例和尺寸属于 API 参数约束，不应该让模型从自然语言里理解，更不能靠后处理裁剪补救。
 
-### 火山引擎封面图上传超时
+### 封面图上传超时
 
 publish_wechat.py 上传封面图到微信后台时，如果图片较大（>1MB），上传可能超过30秒超时。脚本会尝试继续操作但封面可能未成功挂上。
 
@@ -532,6 +542,12 @@ page.get(editor_url)
 - 在 `execute_code` 中读取文件用于搜索/分析是安全的（只要你不写回）
 - 如果需要读取并修改文件内容，**用 `patch()` 工具**而不是 read+write
 - 如果必须用 sed 清理：`sed -E 's/^[[:space:]]*[0-9]+\|//' file.py > file_clean.py`
+
+## 技术号文章写作原则（实测教训）
+
+1. **禁止编造对话和场景**——写文章时如果要用对话示例或操作过程，必须用真实发生的。如果不确定当时具体怎么说的，去 session_search 查历史对话，或者直接问用户。用户两次纠正过编造的对话（"我不是这么说的""我完全不是这样操作的"），这类错误会直接破坏账号信任。
+2. **用户视角的体验优先**——技术号读者关心的不是工具本身，而是"我用的时候是什么感受"。从真实操作体验切入，技术细节作为补充，不要反过来。
+3. **让用户review正文再排版发布**——特别是涉及真实经历的文章，先给用户看 final.md 确认内容方向，确认后再走排版→封面→发布流程。避免发布后才发现内容偏差。
 
 ## 与其他 Skill 的衔接
 

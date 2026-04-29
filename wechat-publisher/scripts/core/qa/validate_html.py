@@ -18,7 +18,27 @@ DISALLOWED_PATTERNS = {
 }
 
 
-def validate_html(html: str) -> List[Tuple[str, str]]:
+def _extract_paragraph_styles(html: str) -> List[str]:
+    return re.findall(r"<p\b[^>]*\bstyle=\"([^\"]*)\"", html, re.IGNORECASE)
+
+
+def _theme_body_size(theme) -> int | None:
+    if not theme:
+        return None
+    tokens = theme.get("tokens") or {}
+    typography = tokens.get("typography") or {}
+    blocks = theme.get("blocks") or {}
+    body_text = blocks.get("body_text") or {}
+    size = body_text.get("font_size") or typography.get("body_size")
+    return int(size) if size is not None else None
+
+
+def _has_style_value(styles: List[str], name: str, expected: str) -> bool:
+    pattern = re.compile(rf"{re.escape(name)}\s*:\s*{re.escape(expected)}\s*;", re.IGNORECASE)
+    return any(pattern.search(style) for style in styles)
+
+
+def validate_html(html: str, theme=None) -> List[Tuple[str, str]]:
     issues: List[Tuple[str, str]] = []
     for tag in DISALLOWED_TAGS:
         if re.search(rf"<{tag}\b", html, re.IGNORECASE):
@@ -31,6 +51,21 @@ def validate_html(html: str) -> List[Tuple[str, str]]:
         issues.append(("warn", "输出缺少顶层 `<section>` 包裹"))
     if "style=" not in html:
         issues.append(("warn", "输出中没有内联样式，可能不是预期的公众号 HTML"))
+    paragraph_styles = _extract_paragraph_styles(html)
+    if paragraph_styles:
+        if not _has_style_value(paragraph_styles, "text-align", "justify"):
+            issues.append(("warn", "正文段落缺少 `text-align:justify`"))
+        if not _has_style_value(paragraph_styles, "text-indent", "1.6em"):
+            issues.append(("warn", "正文段落缺少 `text-indent:1.6em`"))
+        body_size = _theme_body_size(theme)
+        if body_size is not None and not _has_style_value(paragraph_styles, "font-size", f"{body_size}px"):
+            issues.append(("warn", f"正文段落未见主题正文字号 `{body_size}px`"))
+        manifest = (theme or {}).get("manifest") or {}
+        is_senior_theme = "auntie" in (manifest.get("persona_fit") or [])
+        if body_size is not None and is_senior_theme and body_size < 17:
+            issues.append(("warn", "中老年读者主题正文建议使用 `17px`"))
+        if body_size is not None and body_size >= 17 and not _has_style_value(paragraph_styles, "font-size", "17px"):
+            issues.append(("warn", "中老年读者主题正文建议使用 `17px`"))
     return issues
 
 

@@ -32,8 +32,8 @@ colors:
 
 typography:
   font_family: "Optima-Regular, PingFangTC-light, PingFang SC, system-ui, -apple-system, BlinkMacSystemFont, Helvetica Neue, Hiragino Sans GB, Microsoft YaHei UI, Microsoft YaHei, Arial, sans-serif"
-  body_size: 15
-  lead_size: 15
+  body_size: 17
+  lead_size: 17
   caption_size: 12
   code_size: 13
   line_height: 2.0

@@ -29,8 +29,8 @@ colors:
 
 typography:
   font_family: "system-ui,-apple-system,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Hiragino Sans GB,Microsoft YaHei UI,Microsoft YaHei,Arial,sans-serif"
-  body_size: 15
-  lead_size: 15
+  body_size: 17
+  lead_size: 17
   caption_size: 13
   code_size: 13
   line_height: 1.75
@@ -41,7 +41,7 @@ typography:
   footnote_size: 12
   font_weight_heading: bold
   font_weight_body: 400
-  text_align: left
+  text_align: justify
   end_mark_font: "Cochin-BoldItalic"
   end_mark_size: 16
 

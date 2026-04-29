@@ -1,17 +1,18 @@
 body_text:
   enabled: true
   variant: magazine-flow
-  font_size: 15
+  font_size: 17
   line_height: 2.0
   letter_spacing: 3
   align: justify
+  text_indent: 1.6
   font_family: "Optima-Regular, PingFangTC-light"
   description: 杂志感正文，大行高大字间距，宽松阅读体验
 
 lead_text:
   enabled: true
   variant: same-as-body
-  font_size: 15
+  font_size: 17
   description: 导语与正文同风格，靠内容本身吸引
 
 section_title:
