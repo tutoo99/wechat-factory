@@ -33,3 +33,9 @@ dist/
 
 # Logs
 *.log
+
+# Work outputs (article drafts, HTML, cover images, briefs)
+wechat-article-pipeline/work/
+
+# Publisher screenshots (debug artifacts)
+wechat-publisher/data/screenshots/

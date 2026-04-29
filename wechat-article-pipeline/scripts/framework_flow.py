@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-把“选题 -> 推荐框架 -> 编号选择/回退”串成一条 CLI 链路。
+把“选题 -> 推荐框架 -> 编号选择/标题选择/回退”串成一条 CLI 链路。
 
 示例：
   # 第一步：推荐
@@ -67,10 +67,12 @@ def normalize_inputs(args) -> Dict:
     goals = [goal.strip() for goal in args.goal if goal.strip()]
     material_types = [value.strip() for value in args.material_type if value.strip()]
     topic = args.topic.strip()
+    article_title = (getattr(args, "title", None) or "").strip()
     if args.extra_materials:
         topic = "%s\n补充素材：%s" % (topic, args.extra_materials.strip())
     return {
         "topic": topic,
+        "article_title": article_title,
         "goals": goals,
         "material_types": material_types,
         "material_depth": args.material_depth,
@@ -149,6 +151,7 @@ def build_writing_brief(
         "channel_display_name": channel.get("display_name") or channel_id,
         "lane": lane,
         "topic": topic,
+        "article_title": payload.get("article_title") or topic,
         "goals": payload["goals"],
         "material_types": payload["material_types"],
         "material_depth": payload["material_depth"],
@@ -165,6 +168,7 @@ def build_writing_brief(
             "ending_pattern": framework.get("ending_pattern"),
             "constraints": framework.get("constraints") or [],
             "required_materials": framework.get("required_materials") or [],
+            "title_pattern": framework.get("title_pattern") or {},
         },
         "supplemental_materials": supplemental,
         "auto_materials": auto_materials,
@@ -729,6 +733,11 @@ EMOTION_ELDER_FAMILY_BLOCK_TERMS = [
     "凤凰男", "暖男", "择偶", "恋爱", "爱情", "男人", "女性", "女生",
     "女朋友", "男朋友", "婚恋",
 ]
+TECH_OUTLINE_GUARD_TERMS = [
+    "外包", "跳槽", "换公司", "简历", "面试", "技能", "能力", "职业", "方向",
+    "工作", "技术人", "甲方", "项目", "现金流", "转型", "副业", "赚钱",
+    "AI", "Agent", "自动化", "测试", "开发", "程序员",
+]
 
 
 def _extract_terms_from_text(text: str, vocabulary: list[str], limit: int = 4) -> list[str]:
@@ -853,6 +862,40 @@ def _build_emotion_fallback_section_queries(section: dict, topic: str) -> list[d
     return queries[:4]
 
 
+def _build_tech_fallback_section_queries(section: dict, topic: str) -> list[dict]:
+    topic = _normalize_topic_text(topic)
+    title = section.get("title") or ""
+    core_viewpoint = section.get("core_viewpoint") or ""
+    reader_question = section.get("reader_question") or ""
+    combined = " ".join([topic, title, core_viewpoint, reader_question])
+    guard_terms = _extract_terms_from_text(combined, TECH_OUTLINE_GUARD_TERMS, limit=5)
+    supporting_angles = section.get("supporting_angles") or []
+    primary_angle = section.get("evidence_need") or (supporting_angles[0] if supporting_angles else "insight")
+
+    queries = []
+    seen = set()
+
+    def push(query: str, angle: str, source: str) -> None:
+        normalized = _compact_text(query)
+        if not normalized or normalized in seen:
+            return
+        seen.add(normalized)
+        queries.append({"query": normalized, "angle": angle, "source": source})
+
+    if len(guard_terms) >= 3:
+        push(" ".join(guard_terms[:4]), primary_angle, "tech_guard_terms")
+    if title:
+        push(title, primary_angle, "section_title")
+    if guard_terms:
+        for angle in supporting_angles[:2]:
+            terms = LANE_ANGLE_TERMS.get("tech", {}).get(angle, [])
+            if terms:
+                push("%s %s" % (" ".join(guard_terms[:3]), terms[0]), angle, "tech_guard_angle")
+    if core_viewpoint:
+        push(core_viewpoint, primary_angle, "core_viewpoint_relaxed")
+    return queries[:4]
+
+
 def _extract_emotion_guard_terms(topic: str, section: dict, limit: int = 8) -> list[str]:
     combined = " ".join(
         [
@@ -889,6 +932,23 @@ def _emotion_fallback_guard_terms(topic: str, section: dict, limit: int = 6) -> 
     return terms[:limit]
 
 
+def _extract_tech_guard_terms(topic: str, section: dict, fallback: bool = False, limit: int = 8) -> list[str]:
+    combined = " ".join(
+        [
+            str(topic or ""),
+            str(section.get("title") or ""),
+            str(section.get("core_viewpoint") or ""),
+            str(section.get("reader_question") or ""),
+        ]
+    )
+    terms = _extract_terms_from_text(combined, TECH_OUTLINE_GUARD_TERMS, limit=limit)
+    if terms:
+        return terms[:limit]
+    if fallback:
+        return []
+    return _extract_search_guard_terms(topic, section.get("title") or "", section.get("core_viewpoint") or "", limit=limit)
+
+
 def _is_elder_family_topic(text: str) -> bool:
     return any(term in str(text or "") for term in EMOTION_ELDER_FAMILY_TERMS)
 
@@ -905,7 +965,18 @@ def _outline_material_search_thresholds(lane: str, fallback: bool = False) -> tu
         # 情感素材库目前更偏心理/关系洞察，精确生活场景覆盖较少；
         # 情感文只降低情感 lane 的阈值，保留技术号等其他频道原策略。
         return (0.0, 0.38 if fallback else 0.40)
+    if lane == "tech" and fallback:
+        return (0.0, 0.40)
     return (0.04, 0.44)
+
+
+def _outline_candidate_allowed(section: dict, item: dict) -> bool:
+    item_type = str(item.get("type") or "").strip()
+    if item_type != "data":
+        return True
+    evidence_need = section.get("evidence_need") or ""
+    supporting_angles = section.get("supporting_angles") or []
+    return evidence_need == "cost" or "cost" in supporting_angles
 
 
 def fetch_materials_for_outline_sections(
@@ -944,6 +1015,8 @@ def fetch_materials_for_outline_sections(
                     if fallback
                     else _extract_emotion_guard_terms(topic, section)
                 )
+            elif lane == "tech":
+                guard_terms = _extract_tech_guard_terms(topic, section, fallback=fallback)
             else:
                 guard_terms = _extract_search_guard_terms(topic)
             min_domain_overlap, min_vector_score = _outline_material_search_thresholds(lane, fallback=fallback)
@@ -1040,11 +1113,16 @@ def fetch_materials_for_outline_sections(
         if lane == "emotion" and not section_candidates:
             for spec in _build_emotion_fallback_section_queries(section, topic):
                 collect_query(spec, fallback=True)
+        if lane == "tech" and not section_candidates:
+            for spec in _build_tech_fallback_section_queries(section, topic):
+                collect_query(spec, fallback=True)
 
         sorted_candidates = sorted(section_candidates.values(), key=lambda x: x.get("_score", 0), reverse=True)
         for item in sorted_candidates:
             if len(section_materials) >= limit_per_section:
                 break
+            if not _outline_candidate_allowed(section, item):
+                continue
             claim = item.get("primary_claim")
             if not claim or claim in global_claims:
                 continue
@@ -1056,6 +1134,20 @@ def fetch_materials_for_outline_sections(
             for item in sorted_candidates:
                 if len(section_materials) >= limit_per_section:
                     break
+                if not _outline_candidate_allowed(section, item):
+                    continue
+                claim = item.get("primary_claim")
+                if not claim:
+                    continue
+                picked = dict(item)
+                picked.pop("_score", None)
+                section_materials.append(picked)
+        if lane == "tech" and not section_materials:
+            for item in sorted_candidates:
+                if len(section_materials) >= limit_per_section:
+                    break
+                if not _outline_candidate_allowed(section, item):
+                    continue
                 claim = item.get("primary_claim")
                 if not claim:
                     continue
@@ -1142,6 +1234,128 @@ def outline_output_path(channel_id: str, topic: str) -> Path:
     return output_base_path(channel_id, topic).with_suffix(".outline.yaml")
 
 
+def title_prompt_output_path(channel_id: str, topic: str) -> Path:
+    return output_base_path(channel_id, topic).with_suffix(".title.prompt.md")
+
+
+def _format_title_pattern_for_prompt(framework: Dict) -> str:
+    title_pattern = framework.get("title_pattern")
+    if isinstance(title_pattern, dict) and title_pattern:
+        return yaml.safe_dump(title_pattern, allow_unicode=True, sort_keys=False).strip()
+    return """title_pattern: 未配置
+fallback_basis:
+  summary: %s
+  hook_pattern: %s
+  section_flow:
+%s
+  constraints:
+%s""" % (
+        framework.get("summary") or "-",
+        framework.get("hook_pattern") or "-",
+        "\n".join("    - %s" % item for item in framework.get("section_flow") or []) or "    - -",
+        "\n".join("    - %s" % item for item in framework.get("constraints") or []) or "    - -",
+    )
+
+
+def build_title_generation_prompt(
+    channel_id: str,
+    lane: str,
+    persona: Dict,
+    selected,
+    payload: Dict,
+) -> str:
+    framework = selected.data
+    goals = ", ".join(payload.get("goals") or []) or "-"
+    material_types = ", ".join(payload.get("material_types") or []) or "-"
+    title_style = _format_title_pattern_for_prompt(framework)
+    return """# 标题推荐指令
+
+你正在当前 AI CLI 会话中，为一篇公众号文章生成标题候选。不要调用外部工具，不要写大纲，不要写正文。
+
+## 基础信息
+
+- channel: `{channel}`
+- lane: `{lane}`
+- topic: {topic}
+- goals: {goals}
+- material_types: {material_types}
+- material_depth: {material_depth}
+
+## Persona
+
+- id: `{persona_id}`
+- path: `{persona_path}`
+
+```text
+{persona_content}
+```
+
+## 已选 Framework
+
+- id: `{framework_id}`
+- name: {framework_name}
+- summary: {framework_summary}
+- hook_pattern: {hook_pattern}
+- ending_pattern: {ending_pattern}
+
+## 爆文标题样式
+
+```yaml
+{title_style}
+```
+
+## 输出要求
+
+1. 只输出 3 条标题候选，不要输出大纲或正文。
+2. 3 条标题必须彼此不同，不能只是同义替换。
+3. 标题必须围绕 topic，不要偏离选题。
+4. 优先遵循 `title_pattern`；如果 `title_pattern` 未配置，就根据 fallback_basis 的框架开头、结构和约束生成。
+5. 每条标题给出 `0.00` 到 `1.00` 的置信度评分。
+6. 按置信度从高到低排序。
+7. 不要照搬任何爆文原标题、具体人物、具体数字或专属事件细节；只能复用标题结构、情绪按钮、信息差和变量槽位。
+
+## 输出格式
+
+1. 标题：...
+   置信度：0.xx
+   理由：一句话说明为什么贴合框架标题样式
+
+2. 标题：...
+   置信度：0.xx
+   理由：一句话说明为什么贴合框架标题样式
+
+3. 标题：...
+   置信度：0.xx
+   理由：一句话说明为什么贴合框架标题样式
+
+最后追加一句：
+回复 1/2/3 选择标题；不满意可以给修改建议让我重出 3 条；也可以直接给一个你自己的标题。
+""".format(
+        channel=channel_id,
+        lane=lane,
+        topic=payload["topic"].split("\n补充素材：", 1)[0],
+        goals=goals,
+        material_types=material_types,
+        material_depth=payload.get("material_depth") or "-",
+        persona_id=persona["id"],
+        persona_path=persona["path"],
+        persona_content=persona["content"].strip(),
+        framework_id=framework.get("id") or "-",
+        framework_name=framework.get("name") or "-",
+        framework_summary=framework.get("summary") or "-",
+        hook_pattern=framework.get("hook_pattern") or "-",
+        ending_pattern=framework.get("ending_pattern") or "-",
+        title_style=title_style,
+    )
+
+
+def save_title_prompt(channel_id: str, topic: str, content: str) -> Path:
+    output_path = title_prompt_output_path(channel_id, topic)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return output_path
+
+
 def save_outline_prompt(channel_id: str, topic: str, content: str) -> Path:
     output_path = outline_prompt_output_path(channel_id, topic)
     with open(output_path, "w", encoding="utf-8") as f:
@@ -1151,6 +1365,12 @@ def save_outline_prompt(channel_id: str, topic: str, content: str) -> Path:
 
 ALLOWED_OUTLINE_ANGLES = set(ANGLE_ORDER)
 OUTLINE_FUNCTIONS = {"hook", "story", "problem", "insight", "method", "ending"}
+COMMON_PLACEHOLDER_NAMES = [
+    "甲柱子", "乙栓子", "柱子", "栓子", "张三", "李四", "王五", "赵六",
+    "小明", "小红", "小刚", "小美", "阿强", "阿明", "阿伟",
+]
+TECH_PLACEHOLDER_NAMES = ["老王", "小张", "小李", "小王"]
+OUTLINE_NAMING_FIELDS = ["title", "reader_question", "core_viewpoint", "transition_to_next"]
 
 
 def _normalize_outline_angle(value: object) -> str:
@@ -1195,7 +1415,56 @@ def _looks_like_topic_title(section_title: str, topic: str) -> bool:
     return overlap >= 0.8
 
 
-def _normalize_outline_sections(raw_sections: object, topic: str = "") -> list[dict]:
+def _placeholder_names_for_lane(lane: str) -> list[str]:
+    names = list(COMMON_PLACEHOLDER_NAMES)
+    if lane == "tech":
+        names.extend(TECH_PLACEHOLDER_NAMES)
+    return names
+
+
+def _find_placeholder_character_name(text: str, lane: str = "") -> str:
+    text = str(text or "")
+    if not text:
+        return ""
+    for name in _placeholder_names_for_lane(lane):
+        if name and name in text:
+            return name
+    if re.search(r"[甲乙丙丁][柱栓]", text):
+        return re.search(r"[甲乙丙丁][柱栓]", text).group(0)
+    return ""
+
+
+def _naming_replacement_hint(lane: str) -> str:
+    if lane == "emotion":
+        return "请改成“楼下张姐/我那个老同事/菜市场认识的李姐”等关系或生活场景称呼"
+    return "请改成“一个外包测试同事/前同事/项目组里一个测试/这位同事”等身份或场景称呼"
+
+
+def _validate_outline_character_naming(raw: dict, fallback_index: int, lane: str = "") -> None:
+    for field in OUTLINE_NAMING_FIELDS:
+        bad_name = _find_placeholder_character_name(raw.get(field), lane=lane)
+        if bad_name:
+            raise ValueError(
+                "outline.sections[%s].%s 出现占位人名“%s”，%s。"
+                % (fallback_index, field, bad_name, _naming_replacement_hint(lane))
+            )
+
+
+def build_character_naming_guidance(lane: str) -> str:
+    if lane == "emotion":
+        return """## 人物与案例命名规则
+
+- 可以使用符合人设的生活称呼，如“楼下张姐”“我那个老同事”“菜市场认识的李姐”
+- 禁止使用“甲柱子”“乙栓子”“柱子”“栓子”“小明”“小红”“张三李四”等占位人名或网文式假名
+- 不需要给每个案例人物起名字，优先用关系、场景、身份承接"""
+    return """## 人物与案例命名规则
+
+- 技术号不要给案例人物编虚构姓名或占位人名，如“柱子”“栓子”“阿强”“小明”“张三”“李四”“老王”“小张”
+- 涉及他人时用身份/关系/场景称呼，如“一个外包测试同事”“前同事”“面试官”“项目组里一个测试”“那个转 Java 的同事”
+- 如果没有真实经验或可信素材，不编完整人物故事，改写成“我见过一种情况”“面试里常见一种简历”“项目组里常发生这种事”"""
+
+
+def _normalize_outline_sections(raw_sections: object, topic: str = "", lane: str = "") -> list[dict]:
     if not isinstance(raw_sections, list) or not raw_sections:
         raise ValueError("outline.sections 必须是非空列表")
 
@@ -1204,6 +1473,8 @@ def _normalize_outline_sections(raw_sections: object, topic: str = "") -> list[d
     for fallback_index, raw in enumerate(raw_sections, start=1):
         if not isinstance(raw, dict):
             raise ValueError("outline.sections[%s] 必须是对象" % fallback_index)
+
+        _validate_outline_character_naming(raw, fallback_index, lane=lane)
 
         title = _compact_text(raw.get("title"))
         core_viewpoint = _compact_text(raw.get("core_viewpoint"))
@@ -1259,7 +1530,7 @@ def _normalize_outline_sections(raw_sections: object, topic: str = "") -> list[d
     return sections
 
 
-def load_outline_file(path: Path) -> dict:
+def load_outline_file(path: Path, lane: str = "") -> dict:
     if not path.exists():
         raise FileNotFoundError("未找到 outline 文件: %s" % path)
     with open(path, "r", encoding="utf-8") as f:
@@ -1268,10 +1539,11 @@ def load_outline_file(path: Path) -> dict:
         raise ValueError("outline 文件必须是 YAML 对象")
     raw_outline = data.get("outline") if isinstance(data.get("outline"), dict) else data
     topic = _compact_text(raw_outline.get("topic"))
-    sections = _normalize_outline_sections(raw_outline.get("sections"), topic=topic)
+    sections = _normalize_outline_sections(raw_outline.get("sections"), topic=topic, lane=lane)
     return {
         "version": raw_outline.get("version") or 1,
         "topic": topic,
+        "article_title": _compact_text(raw_outline.get("article_title")),
         "thesis": _compact_text(raw_outline.get("thesis")),
         "source_path": str(path),
         "sections": sections,
@@ -1280,11 +1552,13 @@ def load_outline_file(path: Path) -> dict:
 
 def build_outline_prompt(brief: Dict, persona: Dict) -> str:
     framework = brief["framework"]
+    article_title = brief.get("article_title") or brief["topic"]
     goals = ", ".join(brief.get("goals") or []) or "-"
     material_types = ", ".join(brief.get("material_types") or []) or "-"
     required_materials = "\n".join("- %s" % item for item in framework.get("required_materials") or []) or "- 无"
     section_flow = "\n".join("- %s" % item for item in framework.get("section_flow") or []) or "- 自行组织"
     constraints = "\n".join("- %s" % item for item in framework.get("constraints") or []) or "- 无"
+    character_naming_guidance = build_character_naming_guidance(brief.get("lane") or "")
     return """# 大纲生成指令
 
 你正在当前 AI CLI 会话中为一篇公众号文章生成结构化大纲。不要调用外部工具，不要写正文，只输出 YAML。
@@ -1294,6 +1568,7 @@ def build_outline_prompt(brief: Dict, persona: Dict) -> str:
 - channel: `{channel}`
 - lane: `{lane}`
 - topic: {topic}
+- article_title: {article_title}
 - goals: {goals}
 - material_types: {material_types}
 - material_depth: {material_depth}
@@ -1324,6 +1599,8 @@ def build_outline_prompt(brief: Dict, persona: Dict) -> str:
 ### Constraints
 {constraints}
 
+{character_naming_guidance}
+
 ## 输出要求
 
 只输出 YAML，顶层字段必须是 `outline`。不要输出正文，不要输出解释。
@@ -1332,6 +1609,7 @@ def build_outline_prompt(brief: Dict, persona: Dict) -> str:
 outline:
   version: 1
   topic: "{topic}"
+  article_title: "{article_title}"
   thesis: "整篇文章最终要让读者接受的一个判断"
   sections:
     - index: 1
@@ -1355,10 +1633,13 @@ outline:
 6. materials 保持空列表，后续由脚本按节召回素材。
 7. 技术号小标题直接写语义标题；情感号小标题可用“编号 + 语义标题”。
 8. 第一节 title 不能照搬文章 topic，也不能只是把 topic 稍微缩短或改几个字；第一节要承接开头场景，写成具体情境/动作/冲突。
+9. title / reader_question / core_viewpoint / transition_to_next 不得出现占位人名、土味虚构名、甲乙丙丁式人物；需要写人时按“人物与案例命名规则”使用身份或场景称呼。
+10. article_title 是最终文章标题，不能把它原样用作第一节小标题；第一节小标题必须承接开头场景。
 """.format(
         channel=brief["channel"],
         lane=brief["lane"],
         topic=brief["topic"],
+        article_title=article_title,
         goals=goals,
         material_types=material_types,
         material_depth=brief.get("material_depth") or "-",
@@ -1373,6 +1654,7 @@ outline:
         required_materials=required_materials,
         section_flow=section_flow,
         constraints=constraints,
+        character_naming_guidance=character_naming_guidance,
     )
 
 
@@ -1434,6 +1716,7 @@ def build_opening_guidance(lane: str, framework: Dict) -> str:
 def build_writing_prompt(brief: Dict, persona: Dict) -> str:
     framework = brief["framework"]
     theme_recommendation = brief.get("theme_recommendation") or {}
+    article_title = brief.get("article_title") or brief["topic"]
     goals = ", ".join(brief.get("goals") or []) or "-"
     material_types = ", ".join(brief.get("material_types") or []) or "-"
     required_materials = "\n".join("- %s" % item for item in framework.get("required_materials") or []) or "- 无"
@@ -1443,6 +1726,7 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
     auto_materials = brief.get("auto_materials") or []
     outline_guidance = build_outline_guidance(brief.get("outline") or {})
     opening_guidance = build_opening_guidance(brief.get("lane") or "", framework)
+    character_naming_guidance = build_character_naming_guidance(brief.get("lane") or "")
     
     # 构建 auto_materials 文本：只给 primary_claim 和 type，不给原文
     auto_materials_text = ""
@@ -1468,10 +1752,10 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
             outline_guidance=outline_guidance,
             supplemental=supplemental or "无",
         )
-        outline_requirements = """10. 每节必须围绕大纲给定的 core_viewpoint 展开，用自己的论证逻辑和案例去支撑
-11. 大纲中的“可选参考”只是方向提示，不是要复述的内容；可以借用论证方向、换自己的例子，也可以完全不用
-12. 禁止出现“正如XX所说”“有人总结过”“有篇文章提到过”这类引用句式
-13. 如果某个 section 的可选参考与你的真实经验矛盾，以你的经验为准"""
+        outline_requirements = """11. 每节必须围绕大纲给定的 core_viewpoint 展开，用自己的论证逻辑和案例去支撑
+12. 大纲中的“可选参考”只是方向提示，不是要复述的内容；可以借用论证方向、换自己的例子，也可以完全不用
+13. 禁止出现“正如XX所说”“有人总结过”“有篇文章提到过”这类引用句式
+14. 如果某个 section 的可选参考与你的真实经验矛盾，以你的经验为准"""
     else:
         if not supplemental and not auto_materials_text:
             supplemental = "无（自动召回未找到可信匹配素材，不要为了凑素材硬套无关案例或编造来源。）"
@@ -1504,6 +1788,7 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
 - channel_display_name: `{channel_display_name}`
 - lane: `{lane}`
 - topic: {topic}
+- article_title: {article_title}
 - goals: {goals}
 - material_types: {material_types}
 - material_depth: {material_depth}
@@ -1538,6 +1823,8 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
 
 {content_guidance}
 
+{character_naming_guidance}
+
 {opening_guidance}
 
 ## 推荐排版主题
@@ -1558,11 +1845,13 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
 7. 保持像真人写的，不要写成模板总结
 8. 正文开头必须先写无标题引入段，至少 3-6 个自然段后再进入第一个小标题；开头不能直接抛观点
 9. 正文中的第一个小标题不能直接引用文章标题，也不能只是标题的轻微改写
+10. 正文出现他人时按“人物与案例命名规则”使用身份/关系/场景称呼，不要给案例人物编名字
 {outline_requirements}
 
 ## 写作提醒
 
 - 先用“场景/反常/悬念”把读者拉住，再按 framework 展开观点
+- 最终文章标题是：{article_title}
 - 赛道是 `{lane}`，不要跑题
 - 这次主要目标是：{goals}
 """.format(
@@ -1570,6 +1859,7 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
         channel_display_name=brief.get("channel_display_name") or brief["channel"],
         lane=brief["lane"],
         topic=brief["topic"],
+        article_title=article_title,
         goals=goals,
         material_types=material_types,
         material_depth=brief.get("material_depth") or "-",
@@ -1585,6 +1875,7 @@ def build_writing_prompt(brief: Dict, persona: Dict) -> str:
         section_flow=section_flow,
         constraints=constraints,
         content_guidance=content_guidance.rstrip(),
+        character_naming_guidance=character_naming_guidance,
         opening_guidance=opening_guidance,
         outline_requirements=("\n" + outline_requirements) if outline_requirements else "",
         recommended_theme=recommended_theme,
@@ -1636,22 +1927,23 @@ def generate_draft_with_codex(prompt_content: str, output_path: Path) -> Path:
 
 def build_local_partial_draft(brief: Dict, persona: Dict) -> str:
     framework = brief["framework"]
-    title = brief["topic"]
+    title = brief.get("article_title") or brief["topic"]
     persona_id = persona["id"]
     lane = brief["lane"]
     outline_sections = (brief.get("outline") or {}).get("sections") or []
     sections = outline_sections or framework.get("section_flow") or []
     constraints = framework.get("constraints") or []
+    character_naming_guidance = build_character_naming_guidance(lane)
     section_blocks = []
     for item in sections:
         if isinstance(item, dict):
             section_blocks.append(
-                "## %s\n\n[核心观点：%s]\n\n[这里围绕这一节展开，保持 `%s` 人设口吻，补充真实案例、细节和过渡。]\n"
+                "## %s\n\n[核心观点：%s]\n\n[这里围绕这一节展开，保持 `%s` 人设口吻，补充真实场景、身份称呼、细节和过渡；不要给案例人物编名字。]\n"
                 % (item.get("title"), item.get("core_viewpoint"), persona_id)
             )
         else:
             section_blocks.append(
-                "## %s\n\n[这里按“%s”展开这一节，保持 `%s` 人设口吻，补充真实案例、细节和过渡。]\n"
+                "## %s\n\n[这里按“%s”展开这一节，保持 `%s` 人设口吻，补充真实场景、身份称呼、细节和过渡；不要给案例人物编名字。]\n"
                 % (item, item, persona_id)
             )
     constraints_block = "\n".join("- %s" % item for item in constraints) or "- 无"
@@ -1665,6 +1957,8 @@ title: {title}
 [开头先按框架要求起势：{hook_pattern}]
 
 [这一段用 `{persona_id}` 的口吻，先写 3-6 个自然段的真实场景/反常细节/悬念，不要直接总结。第一个小标题必须等开头把读者拉住以后再出现，也不能直接引用文章标题。]
+
+{character_naming_guidance}
 
 {sections}
 
@@ -1690,6 +1984,7 @@ title: {title}
         hook_pattern=framework.get("hook_pattern") or "按框架开头方式切入",
         opening_guidance=opening_guidance,
         persona_id=persona_id,
+        character_naming_guidance=character_naming_guidance,
         sections="\n".join(section_blocks),
         ending_pattern=framework.get("ending_pattern") or "按框架收尾",
         lane=lane,
@@ -1941,10 +2236,25 @@ def print_selection_result(
         )
 
 
+def print_title_prompt_result(selected, title_prompt_path: Path) -> None:
+    data = selected.data
+    print("# 已选框架，等待标题选择\n")
+    print("- name: %s" % data.get("name"))
+    print("- id: `%s`" % data.get("id"))
+    print("- summary: %s" % (data.get("summary") or "-"))
+    print("- title_prompt: `%s`" % title_prompt_path)
+    print("")
+    print("## 下一步")
+    print("1. 当前 AI CLI 读取 title_prompt，按爆文标题样式生成 3 条标题和置信度评分。")
+    print("2. 让用户回复 `1/2/3` 选择；不满意就按用户建议重出 3 条，或接受用户自填标题。")
+    print("3. 标题确定后，重新运行本命令并追加 `--title \"最终标题\"`；如需准备大纲，再追加 `--prepare-outline`。")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="推荐框架并处理编号式后续动作")
     parser.add_argument("--channel", required=True, help="频道标识，如 tech / emotion")
     parser.add_argument("--topic", required=True, help="本次文章选题")
+    parser.add_argument("--title", default=None, help="用户最终确认的文章标题；准备大纲/正文前必填")
     parser.add_argument("--goal", action="append", default=[], help="传播目标，可重复传入")
     parser.add_argument("--material-type", action="append", default=[], help="素材形态，可重复传入")
     parser.add_argument(
@@ -2019,6 +2329,22 @@ def main() -> None:
         selected = candidates[index]
         channel, _ = get_channel_context(args.channel)
         persona = get_persona_info(args.channel, channel)
+        if not payload.get("article_title"):
+            if args.prepare_outline or args.outline_file or args.generate_draft or args.final_md:
+                raise ValueError("请先完成标题选择，并通过 --title 传入最终标题。")
+            title_prompt_path = save_title_prompt(
+                args.channel,
+                payload["topic"],
+                build_title_generation_prompt(
+                    channel_id=args.channel,
+                    lane=lane,
+                    persona=persona,
+                    selected=selected,
+                    payload=payload,
+                ),
+            )
+            print_title_prompt_result(selected, title_prompt_path)
+            return
         brief_payload = dict(payload)
         if args.prepare_outline or args.outline_file:
             brief_payload["no_materials"] = True
@@ -2026,7 +2352,7 @@ def main() -> None:
         outline_file_path = None
         if args.outline_file:
             outline_file_path = Path(args.outline_file)
-            outline = load_outline_file(outline_file_path)
+            outline = load_outline_file(outline_file_path, lane=brief.get("lane") or "")
             if not payload.get("no_materials"):
                 outline = fetch_materials_for_outline_sections(
                     outline=outline,
@@ -2034,7 +2360,7 @@ def main() -> None:
                     lane=lane,
                     material_types=payload.get("material_types") or [],
                     max_per_source=2,
-                    limit_per_section=2,
+                    limit_per_section=1 if lane == "tech" else 2,
                     debug=bool(payload.get("debug_material_queries")),
                 )
             brief["outline"] = outline

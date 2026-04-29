@@ -74,24 +74,17 @@ python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/render_with_rec
 
 | 样式 | 说明 | 推荐场景 |
 |------|------|---------|
-| `huashu` | 暖米白底+暖金细线+极简居中，通用型（默认） | 任何内容类型 |
-| `warm-gradient` | 暖色渐变+圆角卡片+居中标题 | 情感号 |
 | `accent-bar` | 深色底+红色强调条 | 技术号 |
-| `minimal` | 纯渐变+大号居中标题 | 设计/艺术类 |
-| `geometric` | 浅色渐变+几何装饰+分类标签 | 创意类 |
-| **火山引擎文生图** | AI生成，9种风格自动匹配，效果远超本地 | 需要高质量封面时 |
+| **火山引擎文生图** | 当前会话 LLM 生成场景化提示词，再调用火山 API | 需要高质量封面时 |
 
-用户选择前5种本地风格时，走 Pillow 生成逻辑（原有流程不变）。
+用户选择 `accent-bar` 本地风格时，走 Pillow 生成逻辑。
 
 用户选择**火山引擎文生图**时，走以下流程：
 
 1. 从 `final.md` 的 YAML frontmatter 读取 `channel`、`framework`（作为 article_type）、`title`、`cover_text`（封面短文案）
-2. 运行 `--recommend` 推荐3种风格，把结果展示给用户选择
-3. 用户选定后，当前 AI CLI 会话读取 `final.md` 的正文和 frontmatter，结合选定风格，生成一个场景化完整生图提示词，保存为 `final.cover.prompt.md`
-4. 用 `--prompt-file final.cover.prompt.md` 交给火山引擎生成图片
-5. 下载图片保存为 cover.jpg
-
-**重要：不要自动选风格，必须让用户从推荐的3种里选一个。**
+2. 当前 AI CLI 会话读取 `final.md` 的正文和 frontmatter，直接生成一个场景化完整生图提示词，保存为 `final.cover.prompt.md`
+3. 用 `--prompt-file final.cover.prompt.md` 交给火山引擎生成图片
+4. 下载图片保存为 `cover.jpg`
 
 **重要：火山封面必须优先走“当前会话 LLM 生成完整提示词”模式。** 脚本只负责读取提示词和调用火山，不在脚本里内置 LLM 调用。
 
@@ -109,13 +102,10 @@ python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/render_with_rec
 ```bash
 VOLCENGINE="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/generate_cover_volcengine.py"
 
-# 第1步：推荐3种风格，展示给用户选
-python3 $VOLCENGINE final.md --rec
-
-# 第2步：当前会话 LLM 生成完整场景化提示词
+# 第1步：当前会话 LLM 生成完整场景化提示词
 # 输出文件：final.cover.prompt.md
 
-# 第3步：用外部完整提示词生成，默认请求 1880x800（2.35:1）
+# 第2步：用外部完整提示词生成，默认请求 1880x800（2.35:1）
 python3 $VOLCENGINE final.md -o cover.jpg --prompt-file final.cover.prompt.md
 
 # 如需手动指定尺寸，必须保持 2.35:1
@@ -123,24 +113,16 @@ python3 $VOLCENGINE final.md -o cover.jpg --prompt-file final.cover.prompt.md --
 
 # 只检查最终提示词，不调用火山 API
 python3 $VOLCENGINE final.md --prompt-file final.cover.prompt.md --dry-run
-
-# 列出所有可用风格
-python3 $VOLCENGINE --list-styles
 ```
 
-**提示词模板配置文件**：`cover-prompts.yaml`（与脚本同目录），包含9种风格模板和匹配规则。旧模板模式仍保留；不传 `--prompt-file` 时，脚本会按模板生成提示词。
-
-**环境变量**：`ARK_API_KEY`（火山引擎 API key，需在 shell 中 export）。`--recommend`、`--list-styles`、`--dry-run` 不需要 API key。
+**环境变量**：`ARK_API_KEY`（火山引擎 API key，需在 shell 中 export）。`--dry-run` 不需要 API key。
 
 **重要约束：生成封面图后不要调用视觉模型检查效果。** 脚本输出 `[ok] 封面已下载` 就说明成功了，让用户自己去文件夹看即可。
 
 ```bash
 COVER="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/generate_cover.py"
 
-# 示例：用户选择 huashu 风格
-python3 $COVER final.md -o cover.jpg -s huashu
-
-# 示例：用户选择技术号风格
+# 示例：用户选择本地 accent-bar 风格
 python3 $COVER final.md -o cover.jpg -s accent-bar
 ```
 
@@ -270,7 +252,7 @@ SKILL=~/.hermes/skills/wechat-factory/wechat-publisher
 python3 $SKILL/scripts/md_to_styled_html.py final.md -o article.html -t emotion-warm
 
 # Step 2: 封面图
-python3 $SKILL/scripts/generate_cover.py final.md -o cover.jpg -s warm-gradient
+python3 $SKILL/scripts/generate_cover.py final.md -o cover.jpg -s accent-bar
 
 # Step 3: 发布到草稿箱（首次需扫码登录）
 python3 $SKILL/scripts/publish_wechat.py publish \
@@ -391,9 +373,9 @@ title: 文章标题
 **根因**：doubao-seedream-4 等文生图模型会将提示词中的所有文字信息视为"要在画面上渲染的文字"，无法区分"指令性描述"和"要显示的标题文字"。
 
 **已修复**（2026.4.24）：
-1. **cover-prompts.yaml**：模板不再写入 `2.35:1`、`900×383` 这类比例或尺寸字面量，只描述横向宽幅构图，并要求画面只出现主标题。
-2. **generate_cover_volcengine.py 的 build_prompt()**：修复了副标题为空时产生 `副标题""` 引号不配对的问题。现在空副标题会整句删除，不会留下残余引号。
-3. **generate_cover_volcengine.py 的 sanitize_prompt() + size 校验**：调用火山前清理提示词里的比例/尺寸字面量；通过 API `size` 参数请求 `1880x800`；下载后只校验尺寸，不做裁剪/缩放。
+1. **当前会话 LLM 生成完整提示词**：不再走模板推荐和脚本内置风格，提示词由当前 AI CLI 会话结合正文生成。
+2. **generate_cover_volcengine.py 的 sanitize_prompt() + size 校验**：调用火山前清理提示词里的比例/尺寸字面量；通过 API `size` 参数请求 `1880x800`；下载后只校验尺寸，不做裁剪/缩放。
+3. **提示词约束**：只允许画面出现 `cover_text` 或主标题这一组文字，其他说明词、比例、尺寸、风格名都不要写成可被渲染的文字。
 
 **教训**：给文生图模型写提示词时，任何不希望出现在画面上的文字都不要写进 prompt。比例和尺寸属于 API 参数约束，不应该让模型从自然语言里理解，更不能靠后处理裁剪补救。
 
