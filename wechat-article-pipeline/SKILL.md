@@ -419,7 +419,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 # 当前 AI CLI 读取生成的 *.title.prompt.md，输出 3 条标题和置信度；
 # 用户回复 1/2/3、不满意重出，或直接给自己的标题。
 
-# 第三步（质量增强）：传入用户确认的标题，只准备大纲生成指令包
+# 第三步：传入用户确认的标题，默认只准备大纲生成指令包
 # 注意：脚本不调用 LLM；在哪个 AI CLI 会话发起任务，就由当前会话读取 outline.prompt.md 生成 outline.yaml
 python3 wechat-article-pipeline/scripts/framework_flow.py \
   --channel tech \
@@ -428,10 +428,9 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
   --goal click --goal save \
   --material-type case --material-type opinion \
   --material-depth heavy \
-  --code 1 \
-  --prepare-outline
+  --code 1
 
-# 第四步（质量增强）：当前 AI CLI 生成 outline.yaml 后，回传给脚本做分节素材召回和新版 prompt
+# 第四步：当前 AI CLI 生成 outline.yaml 后，回传给脚本做分节素材召回和新版 prompt
 python3 wechat-article-pipeline/scripts/framework_flow.py \
   --channel tech \
   --topic "我把公众号发布系统重构成 channel 模型" \
@@ -442,7 +441,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
   --code 1 \
   --outline-file wechat-article-pipeline/work/framework-flow/xxx.outline.yaml
 
-# 已确认标题后（降级）：跳过整篇素材召回，不要和 --outline-file 混用
+# 旧流程降级：显式跳过大纲，只做整体素材召回生成写作 prompt（不推荐）
 python3 wechat-article-pipeline/scripts/framework_flow.py \
   --channel tech \
   --topic "我把公众号发布系统重构成 channel 模型" \
@@ -451,9 +450,21 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
   --material-type case --material-type opinion \
   --material-depth heavy \
   --code 1 \
+  --legacy-brief-materials
+
+# 已确认标题后（降级）：跳过素材召回，只能用于旧流程；不要和 --outline-file 混用
+python3 wechat-article-pipeline/scripts/framework_flow.py \
+  --channel tech \
+  --topic "我把公众号发布系统重构成 channel 模型" \
+  --title "我把公众号发布系统重构成 channel 模型，终于不再发错号了" \
+  --goal click --goal save \
+  --material-type case --material-type opinion \
+  --material-depth heavy \
+  --code 1 \
+  --legacy-brief-materials \
   --no-materials
 
-# 已确认标题后：如需直接生成初稿，追加 --generate-draft
+# 已回传 outline.yaml 后：如需直接生成初稿，追加 --generate-draft
 python3 wechat-article-pipeline/scripts/framework_flow.py \
   --channel tech \
   --topic "我把公众号发布系统重构成 channel 模型" \
@@ -462,6 +473,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
   --material-type case --material-type opinion \
   --material-depth heavy \
   --code 1 \
+  --outline-file wechat-article-pipeline/work/framework-flow/xxx.outline.yaml \
   --generate-draft
 ```
 
@@ -469,8 +481,8 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 
 - `wechat-article-pipeline/work/framework-flow/*.title.prompt.md`：给当前 AI CLI 会话生成 3 个标题候选的指令包（选框架后、传入 `--title` 前生成）
 - `wechat-article-pipeline/work/framework-flow/*.yaml`：brief；标题确认后会写入 `article_title`
-- `wechat-article-pipeline/work/framework-flow/*.prompt.md`：可直接用于写稿的 prompt 包
-- `wechat-article-pipeline/work/framework-flow/*.outline.prompt.md`：给当前 AI CLI 会话生成 outline.yaml 的指令包（仅 `--prepare-outline` 生成）
+- `wechat-article-pipeline/work/framework-flow/*.outline.prompt.md`：给当前 AI CLI 会话生成 outline.yaml 的指令包（标题确认后默认生成，也可显式传 `--prepare-outline`）
+- `wechat-article-pipeline/work/framework-flow/*.prompt.md`：可直接用于写稿的 prompt 包（默认必须在 `--outline-file` 回传后生成；旧整体召回需显式传 `--legacy-brief-materials`）
 - `wechat-article-pipeline/work/framework-flow/*.outline.yaml`：当前 AI CLI 生成的大纲文件；通过 `--outline-file` 回传给脚本消费
 - `wechat-article-pipeline/work/framework-flow/*.draft.template.md`：本地可直接补写的半成稿模板
 - `wechat-article-pipeline/work/framework-flow/*.theme.yaml`：排版主题推荐结果（结构化）
@@ -481,7 +493,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 ### 编号协议
 
 - `1/2/3`：直接选择候选框架；如果未传 `--title`，进入“标题选择”状态，只生成 `*.title.prompt.md`
-- 选择 `1/2/3` 后，必须先确认标题，并通过 `--title` 传入最终标题，才能进入大纲准备/写作准备
+- 选择 `1/2/3` 后，必须先确认标题，并通过 `--title` 传入最终标题；标题确认后默认进入大纲准备，不直接写正文 prompt
 - `8`：重推，偏点击
 - `9`：重推，偏完读
 - `10`：重推，偏收藏
@@ -507,6 +519,8 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
 
 **违禁词排查（手动）**：读取 banned-word-guard 的 word-lists.md，逐类扫描。技术类文章主要检查绝对化用语（"最好""第一""首创"等），医疗健康类要额外扫五类红线。
 
+**平台风控红线（写稿时必须遵守）**：文章正文中绝不能提"用自动化发公众号/流水线发布公众号/Agent自动发文/自动推送到草稿箱"等描述。微信算法会据此判定为批量自动化发布行为，导致限流甚至封号。举例时用测试自动化、数据处理、工作流提效等其他领域，不要拿公众号本身的自动化流程举例。此规则不限于技术号，所有 channel 均适用。
+
 ### 场景A：从零开始写
 
 当用户只给一个主题或方向时：
@@ -519,7 +533,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
    - **必须让用户自己选**：输出 3 条标题后，让用户回复 `1/2/3`；用户也可以直接给一个自己的标题。
    - **用户不满意时**：如果用户给修改建议，当前会话按同一框架标题样式 + 用户建议重出 3 条不同标题；如果用户不给建议，只说不满意，也重出 3 条不同标题。只要用户仍不满意，就继续重复这一轮。
    - **标题确认后继续**：用户选择或自填标题后，后续命令必须追加 `--title "<最终标题>"`。没有 `--title` 时，脚本不允许进入大纲准备、正文 prompt 或 draft 生成。
-6. **大纲准备（质量增强，推荐）**：标题确认后优先跑 `framework_flow.py --code N --title "<最终标题>" --prepare-outline`。脚本只生成 `*.outline.prompt.md`，不调用 LLM；在哪个 AI CLI 会话发起写作任务，就由当前会话读取这个 prompt 并生成 `*.outline.yaml`。
+6. **大纲准备（强制主路径）**：标题确认后跑 `framework_flow.py --code N --title "<最终标题>"`，脚本默认只生成 `*.outline.prompt.md`，不调用 LLM；在哪个 AI CLI 会话发起写作任务，就由当前会话读取这个 prompt 并生成 `*.outline.yaml`。也可以显式追加 `--prepare-outline`，效果相同。
    - **当前会话生成大纲**：Codex / Claude Code / Hermes 等当前 CLI 负责生成结构化大纲，脚本不写死具体模型。
    - **大纲文件回传**：生成 `outline.yaml` 后，用 `framework_flow.py --code N --title "<最终标题>" --outline-file <path>` 回传给脚本。脚本会校验 section 数量、标题、core_viewpoint、supporting_angles 等字段。
    - **大纲结构**：每节包含 `title / function / reader_question / core_viewpoint / evidence_need / supporting_angles / transition_to_next / materials`。其中 `materials` 保持空列表，后续由脚本填充。
@@ -528,7 +542,7 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
    - **Query 扩写**：无 outline 时，`fetch_materials_for_brief()` 仍按旧逻辑从 topic + section_flow + required_materials 提取核心语义片段，与 section 维度关键词组合生成多个 query。传入 outline 时，改用 `fetch_materials_for_outline_sections()` 做按节召回。
    - **类型软偏好**：不再用 `--type` 硬过滤（如 `material_types=['case']` 不再挡掉 method/insight）。material_types 转为 `--prefer-type` soft bonus，框架 required_materials 匹配的 prefer_type 优先级更高。这样高相关的非目标类型素材不会被排除。
    - **隐私防护（自动执行）**：同一来源最多召回 1 条（`--max-per-source 1`），防止整文还原导致抄袭风险。注入 brief 的只是观点方向，LLM 会用自己的表达重新阐述。
-   - **素材库降级开关**：`framework_flow.py` 支持 `--no-materials` 参数。它只能用于不回传 outline 的降级流程；`--outline-file` 回传阶段默认必须执行分节素材召回，不能同时传 `--no-materials`。脚本会在 brief、prompt 和终端输出中记录 `section_materials_recall` 状态，避免误以为已经带素材写稿。
+   - **素材库降级开关**：`framework_flow.py` 支持 `--no-materials` 参数。它只能和 `--legacy-brief-materials` 一起用于不回传 outline 的旧流程降级；`--outline-file` 回传阶段默认必须执行分节素材召回，不能同时传 `--no-materials`。脚本会在 brief、prompt 和终端输出中记录 `section_materials_recall` 状态，避免误以为已经带素材写稿。
    - 如果用户通过 `--extra-materials` 手动提供了素材，与自动召回的结果合并，手动素材优先
    - **兜底方案（无召回时）**：不硬塞不相关素材。brief 的 auto_materials 为空列表，写稿 prompt 标注"素材供参考，不适用可以不用"。LLM 本身有知识储备，没有外部素材也能写合格内容。素材库的作用是提升质量，不是救命。
    - 如需手动召回：`/opt/miniconda3/bin/python3 /Users/naipan/.hermes/skills/strategy-material-engine/scripts/search_materials.py "<query>" --root /Users/naipan/.hermes/skills/strategy-material-engine --limit 5 --max-per-source 1`
@@ -807,6 +821,25 @@ with open("draft.yaml", "w") as f:
 - 传入 `--outline-file` 时，绝对不加 `--no-materials`。脚本会自动按节做素材召回。
 - `--no-materials` 只用于"不回传 outline 的降级流程"（比如用户只要一个 quick brief，不需要分节素材）。
 - 写稿前检查 prompt.md 里的"分节素材指引"部分，如果每个 section 都是"无"，说明素材召回被跳过了，需要重新跑一遍。
+
+### 执行效率：素材读取过多导致上下文膨胀、推理变慢
+
+2026.5.7 实际踩坑：在 framework_flow 流程中，素材准备阶段读入了过多大文件（一篇 1371 行的帖子全文、完整的 skill 文件、prompt 模板等），导致上下文膨胀到几万 token。后续每一步推理都要过一遍完整上下文，越往后越慢，用户反复催促"开始了么"。
+
+**根因：**
+- 大文件整文件灌入（应该只读需要的段落，用 offset+limit 控制）
+- 同一关键词反复搜索（"原子拉片课"搜了三遍）
+- 素材文件逐个 read_file 全文读取（应该 search_files 定位后再只读关键片段）
+
+**正确做法：**
+1. 先精确搜（search_files + context + limit 控制返回量），不要广撒网再筛选
+2. 大文件只读需要的段落，不整文件灌入上下文
+3. 素材召回一次到位，不要反复搜同一关键词
+4. 标题选完直接跳到写稿，中间文件能不读就不读
+5. 素材内容记在脑子里（已经读过的素材），不要反复回头 read_file
+6. 如果素材已经在前面的上下文中出现，写稿时直接用，不要"为了确认"再去读一遍
+
+**影响链：** 上下文膨胀 → 每轮推理时间增加 → 用户等待 → 反复催促 → 体验差。预防和治理同样重要。
 
 ### publish_wechat.py 封面图上传可能超时
 

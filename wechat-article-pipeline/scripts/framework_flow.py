@@ -11,10 +11,20 @@
     --material-type case --material-type opinion \
     --material-depth heavy
 
-  # 第二步：直接按编号选择
+  # 第二步：直接按编号选择，生成标题推荐指令包
   python3 framework_flow.py \
     --channel tech \
     --topic "我把公众号发布系统重构成 channel 模型" \
+    --goal click --goal save \
+    --material-type case --material-type opinion \
+    --material-depth heavy \
+    --code 1
+
+  # 第三步：标题确认后，默认只生成大纲指令包；回传 outline.yaml 后才生成写作 prompt
+  python3 framework_flow.py \
+    --channel tech \
+    --topic "我把公众号发布系统重构成 channel 模型" \
+    --title "我把公众号发布系统重构成 channel 模型，终于不再发错号了" \
     --goal click --goal save \
     --material-type case --material-type opinion \
     --material-depth heavy \
@@ -990,8 +1000,11 @@ def fetch_materials_for_outline_sections(
 ) -> dict:
     """按 outline section 召回素材，并把结果写回 section.materials。"""
     import json
+    import tempfile
+    import time
 
     search_script = STRATEGY_MATERIAL_ENGINE_ROOT / "scripts" / "search_materials.py"
+    batch_search_script = STRATEGY_MATERIAL_ENGINE_ROOT / "scripts" / "batch_search_materials.py"
     enriched = dict(outline or {})
     sections = [dict(section) for section in (outline.get("sections") or [])]
     enriched["sections"] = sections
@@ -1000,8 +1013,13 @@ def fetch_materials_for_outline_sections(
         "sections_total": len(sections),
         "sections_with_materials": 0,
         "materials_total": 0,
+        "query_count": 0,
+        "fallback_query_count": 0,
+        "batch_calls": 0,
+        "elapsed_seconds": 0.0,
         "reason": "",
     }
+    started_at = time.monotonic()
     if not search_script.exists():
         recall_meta["status"] = "skipped"
         recall_meta["reason"] = "search_materials.py not found"
@@ -1011,85 +1029,149 @@ def fetch_materials_for_outline_sections(
     global_claims = set()
     debug_rows = []
     per_query_limit = max(limit_per_section * 4, 6)
+    section_candidates_by_pos: list[dict[str, dict]] = [{} for _ in sections]
 
-    for section in sections:
-        section_materials: list[dict] = []
-        section_candidates: dict[str, dict] = {}
-        queries = _build_outline_section_queries(section, topic, lane)
+    def build_search_job(section_pos: int, spec: dict, fallback: bool = False) -> dict:
+        section = sections[section_pos]
         prefer_type = _prefer_type_for_outline_section(section, material_types)
+        if lane == "emotion":
+            guard_terms = (
+                _emotion_fallback_guard_terms(topic, section)
+                if fallback
+                else _extract_emotion_guard_terms(topic, section)
+            )
+        elif lane == "tech":
+            guard_terms = _extract_tech_guard_terms(topic, section, fallback=fallback)
+        else:
+            guard_terms = _extract_search_guard_terms(topic)
+        min_domain_overlap, min_vector_score = _outline_material_search_thresholds(lane, fallback=fallback)
+        block_terms = _emotion_material_block_terms(topic, fallback=fallback) if lane == "emotion" else []
+        return {
+            "id": "",
+            "section": section.get("index", section_pos + 1),
+            "section_pos": section_pos,
+            "query": spec["query"],
+            "angle": spec.get("angle", ""),
+            "source": spec.get("source", ""),
+            "fallback": fallback,
+            "limit": per_query_limit,
+            "max_per_source": max_per_source,
+            "domain_query": _compact_text(
+                "%s %s %s" % (topic, section.get("title") or "", section.get("core_viewpoint") or "")
+            ),
+            "min_domain_overlap": min_domain_overlap,
+            "min_vector_score": min_vector_score,
+            "require_terms": guard_terms,
+            "min_required_term_hits": 1 if guard_terms else 0,
+            "block_terms": block_terms,
+            "prefer_type": prefer_type,
+        }
 
-        def collect_query(spec: dict, fallback: bool = False) -> None:
+    def run_search_jobs(jobs: list[dict], timeout: int = 180) -> dict[str, dict]:
+        if not jobs:
+            return {}
+        recall_meta["batch_calls"] += 1
+        recall_meta["query_count"] += len(jobs)
+        if batch_search_script.exists():
+            query_path = None
+            try:
+                with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+                    json.dump({"queries": jobs}, handle, ensure_ascii=False)
+                    query_path = Path(handle.name)
+                cmd = [
+                    "/opt/miniconda3/bin/python3",
+                    str(batch_search_script),
+                    "--root",
+                    str(STRATEGY_MATERIAL_ENGINE_ROOT),
+                    "--queries-json",
+                    str(query_path),
+                    "--reranker",
+                    "none",
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+                if result.returncode != 0:
+                    return {
+                        job["id"]: {
+                            "id": job["id"],
+                            "error": "returncode=%s %s" % (result.returncode, _compact_text(result.stderr)[:160]),
+                            "results": [],
+                        }
+                        for job in jobs
+                    }
+                rows = {}
+                for line in result.stdout.strip().splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        payload = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if payload.get("id"):
+                        rows[str(payload["id"])] = payload
+                return rows
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as exc:
+                return {job["id"]: {"id": job["id"], "error": str(exc), "results": []} for job in jobs}
+            finally:
+                if query_path:
+                    query_path.unlink(missing_ok=True)
+
+        rows = {}
+        for job in jobs:
             if lane == "emotion":
-                guard_terms = (
-                    _emotion_fallback_guard_terms(topic, section)
-                    if fallback
-                    else _extract_emotion_guard_terms(topic, section)
-                )
-            elif lane == "tech":
-                guard_terms = _extract_tech_guard_terms(topic, section, fallback=fallback)
+                block_terms = _emotion_material_block_terms(topic, fallback=bool(job.get("fallback")))
             else:
-                guard_terms = _extract_search_guard_terms(topic)
-            min_domain_overlap, min_vector_score = _outline_material_search_thresholds(lane, fallback=fallback)
+                block_terms = []
             cmd = [
                 "/opt/miniconda3/bin/python3",
                 str(search_script),
-                spec["query"],
+                job["query"],
                 "--root", str(STRATEGY_MATERIAL_ENGINE_ROOT),
-                "--limit", str(per_query_limit),
+                "--limit", str(job.get("limit") or per_query_limit),
                 "--max-per-source", str(max_per_source),
                 "--reranker", "none",
                 "--domain-query",
-                _compact_text("%s %s %s" % (topic, section.get("title") or "", section.get("core_viewpoint") or "")),
-                "--min-domain-overlap", str(min_domain_overlap),
-                "--min-vector-score", str(min_vector_score),
+                str(job.get("domain_query") or ""),
+                "--min-domain-overlap", str(job.get("min_domain_overlap") or 0.0),
+                "--min-vector-score", str(job.get("min_vector_score") or 0.0),
             ]
+            guard_terms = job.get("require_terms") or []
             if guard_terms:
                 cmd.extend(["--require-term", ",".join(guard_terms), "--min-required-term-hits", "1"])
-            if lane == "emotion":
-                cmd.extend(["--block-term", ",".join(_emotion_material_block_terms(topic, fallback=fallback))])
-            if prefer_type:
-                cmd.extend(["--prefer-type", prefer_type])
+            if block_terms:
+                cmd.extend(["--block-term", ",".join(block_terms)])
+            if job.get("prefer_type"):
+                cmd.extend(["--prefer-type", str(job["prefer_type"])])
 
-            hits = 0
-            unique_claims = 0
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as exc:
-                debug_rows.append(
-                    {
-                        "section": section.get("index"),
-                        "query": spec["query"],
-                        "angle": spec.get("angle", ""),
-                        "source": spec.get("source", ""),
-                        "guard_terms": guard_terms,
-                        "hits": 0,
-                        "unique_claims": 0,
-                        "error": str(exc),
-                    }
-                )
-                return
+                rows[job["id"]] = {"id": job["id"], "error": str(exc), "results": []}
+                continue
             if result.returncode != 0:
-                debug_rows.append(
-                    {
-                        "section": section.get("index"),
-                        "query": spec["query"],
-                        "angle": spec.get("angle", ""),
-                        "source": spec.get("source", ""),
-                        "guard_terms": guard_terms,
-                        "hits": 0,
-                        "unique_claims": 0,
-                        "error": "returncode=%s %s" % (result.returncode, _compact_text(result.stderr)[:160]),
-                    }
-                )
-                return
-
+                rows[job["id"]] = {
+                    "id": job["id"],
+                    "error": "returncode=%s %s" % (result.returncode, _compact_text(result.stderr)[:160]),
+                    "results": [],
+                }
+                continue
+            results = []
             for line in result.stdout.strip().splitlines():
                 if not line.strip():
                     continue
                 try:
-                    item = json.loads(line)
+                    results.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
+            rows[job["id"]] = {"id": job["id"], "results": results}
+        return rows
+
+    def collect_job_results(jobs: list[dict], rows_by_id: dict[str, dict]) -> None:
+        for job in jobs:
+            section_candidates = section_candidates_by_pos[job["section_pos"]]
+            row = rows_by_id.get(job["id"]) or {"results": [], "error": "missing batch result"}
+            hits = 0
+            unique_claims = 0
+            for item in row.get("results") or []:
                 hits += 1
                 claim = item.get("primary_claim", "")
                 if not claim:
@@ -1101,31 +1183,62 @@ def fetch_materials_for_outline_sections(
                         "primary_claim": claim,
                         "type": item.get("type", ""),
                         "role": item.get("role", ""),
-                        "source": item.get("source", ""),
+                        "source": item.get("source") or item.get("path", ""),
                         "_score": score,
                     }
                     unique_claims += 1
             debug_rows.append(
                 {
-                    "section": section.get("index"),
-                    "query": spec["query"],
-                    "angle": spec.get("angle", ""),
-                    "source": spec.get("source", ""),
-                    "guard_terms": guard_terms,
+                    "section": job.get("section"),
+                    "query": job["query"],
+                    "angle": job.get("angle", ""),
+                    "source": job.get("source", ""),
+                    "fallback": bool(job.get("fallback")),
+                    "guard_terms": job.get("require_terms") or [],
                     "hits": hits,
                     "unique_claims": unique_claims,
+                    "error": row.get("error", ""),
                 }
             )
 
-        for spec in queries:
-            collect_query(spec, fallback=False)
+    primary_jobs = []
+    primary_query_budget = 30
+    fallback_query_budget = 20
+    for section_pos, section in enumerate(sections):
+        for spec in _build_outline_section_queries(section, topic, lane):
+            if len(primary_jobs) >= primary_query_budget:
+                break
+            job = build_search_job(section_pos, spec, fallback=False)
+            job["id"] = "primary-%s" % len(primary_jobs)
+            primary_jobs.append(job)
 
-        if lane == "emotion" and not section_candidates:
-            for spec in _build_emotion_fallback_section_queries(section, topic):
-                collect_query(spec, fallback=True)
-        if lane == "tech" and not section_candidates:
-            for spec in _build_tech_fallback_section_queries(section, topic):
-                collect_query(spec, fallback=True)
+    collect_job_results(primary_jobs, run_search_jobs(primary_jobs))
+
+    fallback_jobs = []
+    for section_pos, section_candidates in enumerate(section_candidates_by_pos):
+        if section_candidates:
+            continue
+        section = sections[section_pos]
+        if lane == "emotion":
+            fallback_specs = _build_emotion_fallback_section_queries(section, topic)
+        elif lane == "tech":
+            fallback_specs = _build_tech_fallback_section_queries(section, topic)
+        else:
+            fallback_specs = []
+        for spec in fallback_specs:
+            if len(fallback_jobs) >= fallback_query_budget:
+                break
+            job = build_search_job(section_pos, spec, fallback=True)
+            job["id"] = "fallback-%s" % len(fallback_jobs)
+            fallback_jobs.append(job)
+
+    if fallback_jobs:
+        recall_meta["fallback_query_count"] = len(fallback_jobs)
+        collect_job_results(fallback_jobs, run_search_jobs(fallback_jobs))
+
+    for section_pos, section in enumerate(sections):
+        section_materials: list[dict] = []
+        section_candidates = section_candidates_by_pos[section_pos]
 
         sorted_candidates = sorted(section_candidates.values(), key=lambda x: x.get("_score", 0), reverse=True)
         for item in sorted_candidates:
@@ -1174,17 +1287,23 @@ def fetch_materials_for_outline_sections(
         recall_meta["reason"] = "no trusted section materials matched"
     else:
         recall_meta["status"] = "matched"
+    recall_meta["elapsed_seconds"] = round(time.monotonic() - started_at, 3)
     enriched["section_materials_recall"] = recall_meta
 
     if debug:
         print("# outline-material-query-debug")
+        print("- query_count: %s" % recall_meta["query_count"])
+        print("- fallback_query_count: %s" % recall_meta["fallback_query_count"])
+        print("- batch_calls: %s" % recall_meta["batch_calls"])
+        print("- elapsed_seconds: %s" % recall_meta["elapsed_seconds"])
         for row in debug_rows:
             print(
-                "- section[%s] query[%s/%s]: %s | guard=%s | hits=%s | unique_claims=%s"
+                "- section[%s] query[%s/%s%s]: %s | guard=%s | hits=%s | unique_claims=%s"
                 % (
                     row["section"],
                     row["angle"] or "insight",
                     row["source"] or "-",
+                    "/fallback" if row.get("fallback") else "",
                     row["query"],
                     ",".join(row.get("guard_terms") or []) or "-",
                     row["hits"],
@@ -2305,10 +2424,13 @@ def print_selection_result(
         print("下一步：用当前 AI CLI 读取 outline_prompt 生成 outline.yaml，再通过 `--outline-file` 回传给脚本。")
     elif draft_path:
         print("下一步：draft 已生成，可以直接进入润色 / 发布包装。")
+    elif prompt_path and outline_file_path:
+        print("下一步：分节素材已注入 prompt，可直接写稿；如需自动 draft，可带同一个 `--outline-file` 追加 `--generate-draft` 重跑。")
+    elif prompt_path:
+        print("下一步：这是旧的整体素材召回 prompt，只建议用于快速降级；正式写稿请先生成 outline 并通过 `--outline-file` 回传。")
     else:
         print(
-            "下一步：直接在本地模板上补写；或追加 `--generate-draft` 让 Codex 直接出 draft；"
-            "正文定稿后可传 `--final-md` 自动生成 article.html。"
+            "下一步：直接在本地模板上补写；正文定稿后可传 `--final-md` 自动生成 article.html。"
         )
 
 
@@ -2323,7 +2445,7 @@ def print_title_prompt_result(selected, title_prompt_path: Path) -> None:
     print("## 下一步")
     print("1. 当前 AI CLI 读取 title_prompt，按爆文标题样式生成 3 条标题和置信度评分。")
     print("2. 让用户回复 `1/2/3` 选择；不满意就按用户建议重出 3 条，或接受用户自填标题。")
-    print("3. 标题确定后，重新运行本命令并追加 `--title \"最终标题\"`；如需准备大纲，再追加 `--prepare-outline`。")
+    print("3. 标题确定后，重新运行本命令并追加 `--title \"最终标题\"`；脚本会默认进入大纲准备。")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -2348,6 +2470,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--final-md", default=None, help="正文终稿路径；若提供，将按推荐主题自动生成 article.html")
     parser.add_argument("--article-html", default=None, help="article.html 输出路径，默认与 final.md 同目录")
     parser.add_argument("--no-materials", action="store_true", help="跳过素材库自动召回，brief 中 auto_materials 为空")
+    parser.add_argument(
+        "--legacy-brief-materials",
+        action="store_true",
+        help="兼容旧流程：标题确认后不走 outline，直接用整体素材召回生成写作 prompt（不推荐）",
+    )
     parser.add_argument("--debug-material-queries", action="store_true", help="打印素材召回 query、angle 和候选统计")
     return parser
 
@@ -2357,6 +2484,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.prepare_outline and args.generate_draft and not args.outline_file:
         raise ValueError("--prepare-outline 只准备大纲指令包；如需生成正文，请先传入 --outline-file")
+    if args.generate_draft and not args.outline_file:
+        raise ValueError("--generate-draft 必须配合 --outline-file 使用，避免绕过分节素材召回直接写稿。")
+    if args.legacy_brief_materials and (args.prepare_outline or args.outline_file):
+        raise ValueError("--legacy-brief-materials 是旧的整体召回降级路径，不能和 --prepare-outline/--outline-file 混用。")
     if args.outline_file and args.no_materials:
         raise ValueError(
             "--outline-file 回传阶段默认必须执行分节素材召回；不要同时传 --no-materials。"
@@ -2426,6 +2557,13 @@ def main() -> None:
             )
             print_title_prompt_result(selected, title_prompt_path)
             return
+        if (
+            not args.prepare_outline
+            and not args.outline_file
+            and not args.final_md
+            and not args.legacy_brief_materials
+        ):
+            args.prepare_outline = True
         brief_payload = dict(payload)
         if args.prepare_outline or args.outline_file:
             brief_payload["no_materials"] = True

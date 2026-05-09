@@ -1,11 +1,11 @@
 channels:
   tech:
-    display_name: 技术号
+    display_name: 乔三
     lane: tech
     profile: mp__qiaosan
     persona: tech
     archive_account: tech
-    default_author: 乔三AI效率工坊
+    default_author: 乔三
     status: active
 
   emotion:
