@@ -9,6 +9,9 @@
     python3 publish_wechat.py publish --channel tech --article article.html \
         --cover cover.jpg --title "标题" --author "作者" --digest "摘要"
 
+    python3 publish_wechat.py xls-publish --channel tech \
+        --images pic1.jpg pic2.jpg --title "标题" --description "描述"
+
     python3 publish_wechat.py list-channels
     python3 publish_wechat.py list-profiles
     python3 publish_wechat.py create-profile --slug qiaosan --display-name "乔三技术号"
@@ -22,6 +25,7 @@ import shutil
 import sys
 import time
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Optional
 
@@ -76,6 +80,49 @@ def read_file_content(filepath):
         return f.read()
 
 
+class _HTMLTextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+
+    def handle_data(self, data):
+        text = data.strip()
+        if text:
+            self.parts.append(text)
+
+
+def html_to_plain_text(html_content):
+    parser = _HTMLTextExtractor()
+    parser.feed(html_content or "")
+    return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
+
+
+def normalize_text(text):
+    return re.sub(r"\s+", "", text or "")
+
+
+def body_sample_from_html(html_content, min_len=18, max_len=36):
+    text = html_to_plain_text(html_content)
+    normalized = normalize_text(text)
+    if len(normalized) <= min_len:
+        return normalized
+    return normalized[:max_len]
+
+
+def resolve_input_files(paths, label="文件"):
+    if not paths:
+        return []
+    resolved = []
+    for raw_path in paths:
+        p = Path(raw_path).expanduser()
+        if not p.is_absolute():
+            p = p.resolve()
+        if not p.exists():
+            raise FileNotFoundError("%s不存在: %s" % (label, p))
+        resolved.append(str(p))
+    return resolved
+
+
 def resolve_cover_path(cover=None):
     if not cover:
         return None
@@ -93,6 +140,11 @@ def compute_file_sha256(filepath):
         for chunk in iter(lambda: f.read(8192), b""):
             sha.update(chunk)
     return sha.hexdigest()
+
+
+def write_json_file(filepath, data):
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def load_channels_config(config_path=CHANNELS_CONFIG_PATH):
@@ -146,10 +198,8 @@ def read_profile_meta(profile_dir):
 
 
 def write_profile_meta(profile_dir, data):
-    import json
     meta_path = Path(profile_dir) / PROFILE_META_FILENAME
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    write_json_file(meta_path, data)
 
 
 def iter_profile_dirs():
@@ -273,8 +323,7 @@ def load_publish_json(article_dir):
 def save_publish_json(article_dir, data):
     """保存发布记录。"""
     json_path = os.path.join(article_dir, "publish.json")
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    write_json_file(json_path, data)
 
 
 def archive_current_version(article_dir):
@@ -284,15 +333,15 @@ def archive_current_version(article_dir):
     ver_dir = os.path.join(article_dir, "versions", "v%d" % new_ver)
     ensure_dir(ver_dir)
 
-    # 要归档的文件
-    artifacts = ["final.md", "article.html", "cover.jpg", "cover.png"]
     moved = []
-    for fname in artifacts:
-        src_path = os.path.join(article_dir, fname)
-        if os.path.exists(src_path):
-            dst_path = os.path.join(ver_dir, fname)
-            shutil.copy2(src_path, dst_path)
-            moved.append(fname)
+    for entry in os.scandir(article_dir):
+        if not entry.is_file():
+            continue
+        if entry.name == "publish.json":
+            continue
+        dst_path = os.path.join(ver_dir, entry.name)
+        shutil.copy2(entry.path, dst_path)
+        moved.append(entry.name)
 
     pub["current_version"] = new_ver
     save_publish_json(article_dir, pub)
@@ -313,7 +362,7 @@ def record_publish(article_dir, title, account, action):
     save_publish_json(article_dir, pub)
 
 
-def copy_artifacts(article_dir, article_html_path, cover_path, final_md_path=None):
+def copy_artifacts(article_dir, article_html_path, cover_path, final_md_path=None, extra_sources=None):
     """把产物复制到归档目录。"""
     import os
     # 复制 HTML
@@ -331,13 +380,28 @@ def copy_artifacts(article_dir, article_html_path, cover_path, final_md_path=Non
         dst = os.path.join(article_dir, "final.md")
         if os.path.abspath(final_md_path) != os.path.abspath(dst):
             shutil.copy2(final_md_path, dst)
+    for src_path in extra_sources or []:
+        if src_path and os.path.exists(src_path):
+            dst = os.path.join(article_dir, os.path.basename(src_path))
+            if os.path.abspath(src_path) != os.path.abspath(dst):
+                shutil.copy2(src_path, dst)
+
+
+def has_current_artifacts(article_dir):
+    if not os.path.isdir(article_dir):
+        return False
+    for entry in os.scandir(article_dir):
+        if entry.is_file() and entry.name != "publish.json":
+            return True
+    return False
 
 
 def is_probable_duplicate_publish(
     article_dir,
-    article_html_path,
+    article_html_path=None,
     cover_path=None,
     final_md_path=None,
+    extra_comparisons=None,
     window_seconds=DUPLICATE_PUBLISH_WINDOW_SECONDS,
 ):
     """判断是否是短时间内对同一篇稿件的重复发布调用。"""
@@ -361,13 +425,18 @@ def is_probable_duplicate_publish(
     if delta.total_seconds() > window_seconds:
         return False
 
-    comparisons = [
-        (article_html_path, os.path.join(article_dir, "article.html")),
-    ]
+    comparisons = []
+    if article_html_path:
+        comparisons.append((article_html_path, os.path.join(article_dir, "article.html")))
     if cover_path:
         comparisons.append((cover_path, os.path.join(article_dir, os.path.basename(cover_path))))
     if final_md_path:
         comparisons.append((final_md_path, os.path.join(article_dir, "final.md")))
+    if extra_comparisons:
+        comparisons.extend(extra_comparisons)
+
+    if not comparisons:
+        return False
 
     for src, dst in comparisons:
         if not src or not os.path.exists(src) or not os.path.exists(dst):
@@ -402,6 +471,27 @@ def cleanup_old_versions(article_dir, retention_days=VERSION_RETENTION_DAYS):
     if cleaned > 0:
         print("[清理] 已清理 %d 个过期版本（超过 %d 天）" % (cleaned, retention_days))
     return cleaned
+
+
+class AutomationStepError(RuntimeError):
+    pass
+
+
+def raise_automation_step_error(page, step_name, screenshot_dir, message):
+    ensure_dir(screenshot_dir)
+    safe_step = sanitize_dirname(step_name or "step", max_len=30) or "step"
+    ss_path = os.path.join(screenshot_dir, "%s_%d.png" % (safe_step, int(time.time())))
+    try:
+        page.screenshot(ss_path)
+    except Exception:
+        ss_path = None
+
+    print("[阻塞] %s" % step_name)
+    print("[阻塞] %s" % message)
+    print("[阻塞] 当前URL: %s" % getattr(page, "url", "-"))
+    if ss_path:
+        print("[阻塞] 截图: %s" % ss_path)
+    raise AutomationStepError("%s: %s" % (step_name, message))
 
 
 # ── 登录检测 ──
@@ -642,66 +732,161 @@ def fill_author(page, author):
 def fill_body_html(page, html_content):
     print("[填写] 注入正文 HTML...")
     result = None
+    expected_sample = body_sample_from_html(html_content)
 
-    # 方案1：先尝试 replaceAllContent + 验证段落是否正确解析
-    # 如果 replaceAllContent 把 HTML 当纯文本（只有一个文本节点），则回退
+    # 先定位真正的正文编辑器。微信后台新版页面里标题/封面/正文都可能出现
+    # contenteditable/ProseMirror，不能再直接拿 document.querySelector('.ProseMirror')。
     try:
+        payload = json.dumps({"html": html_content, "expected": expected_sample})
         api_result = page.run_js(
-            "(function(value) {"
-            "var pm = document.querySelector('.ProseMirror');"
-            "var root = pm && pm.parentElement && pm.parentElement.__vue__ ? pm.parentElement.__vue__.$root : null;"
-            "if (!root || typeof root.replaceAllContent !== 'function') return null;"
-            "root.replaceAllContent(value);"
-            "if (typeof root.focus === 'function') {"
-            "  try { root.focus(); } catch (e) {}"
+            "(function(payload) {"
+            "var value = payload.html || '';"
+            "var expected = payload.expected || '';"
+            "function visible(el) {"
+            "  if (!el || el.offsetParent === null) return false;"
+            "  var rect = el.getBoundingClientRect();"
+            "  return !!rect && rect.width > 80 && rect.height > 30;"
             "}"
-            # 验证：检查 ProseMirror 内是否有 p 标签，如果没有说明 HTML 未被正确解析
-            "var ps = pm ? pm.querySelectorAll('p') : [];"
-            "if (ps.length === 0) {"
-            "  return 'NO_P_TAGS';"
+            "function contextText(el) {"
+            "  var bits = [];"
+            "  var cur = el;"
+            "  for (var i = 0; cur && i < 4; i++, cur = cur.parentElement) {"
+            "    if (cur.id) bits.push(cur.id);"
+            "    if (cur.className) bits.push(String(cur.className));"
+            "    if (cur.getAttribute) {"
+            "      bits.push(cur.getAttribute('placeholder') || '');"
+            "      bits.push(cur.getAttribute('aria-label') || '');"
+            "      bits.push(cur.getAttribute('data-placeholder') || '');"
+            "    }"
+            "    bits.push((cur.textContent || '').slice(0, 80));"
+            "  }"
+            "  return bits.join(' ');"
             "}"
-            "return 'OK:' + ps.length;"
-            "})",
-            html_content,
-        )
-        if api_result and str(api_result).strip() == 'NO_P_TAGS':
-            print("[填写] replaceAllContent 未正确解析 HTML（无 p 标签），回退到 innerHTML 方案")
-            result = None
-        elif api_result and str(api_result).startswith('OK:'):
-            result = "root.replaceAllContent"
-            print("[填写] replaceAllContent 验证通过 (%s)" % str(api_result))
-        else:
-            result = None
-    except Exception:
-        result = None
-
-    # 方案2：innerHTML 直接注入 ProseMirror
-    if not result:
-        safe_html = json.dumps(html_content)
-        result = page.run_js(
-            "(function() {"
-            "var pm = document.querySelector('.ProseMirror');"
-            "if (pm) {"
-            "  pm.focus();"
-            "  pm.innerHTML = %s;"
-            "  pm.dispatchEvent(new Event('input', {bubbles: true}));"
-            "  pm.dispatchEvent(new Event('change', {bubbles: true}));"
-            "  try { pm.blur(); } catch (e3) {}"
-            "  return 'ProseMirror';"
+            "function scoreEditor(el) {"
+            "  var rect = el.getBoundingClientRect();"
+            "  var ctx = contextText(el);"
+            "  var score = rect.width * rect.height;"
+            "  if (el.classList && el.classList.contains('ProseMirror')) score += 1000000;"
+            "  if (ctx.indexOf('正文') >= 0 || ctx.indexOf('请输入正文') >= 0) score += 500000;"
+            "  if (ctx.indexOf('标题') >= 0 || ctx.indexOf('作者') >= 0 || ctx.indexOf('摘要') >= 0 || ctx.indexOf('封面') >= 0 || ctx.indexOf('留言') >= 0 || ctx.indexOf('赞赏') >= 0 || ctx.indexOf('原创') >= 0) score -= 800000;"
+            "  if (rect.height < 100) score -= 500000;"
+            "  return score;"
             "}"
-            "var selectors = ['#edui_body_container', '.edui-body-container', '#js_editor', '[contenteditable=true]', '#js_canvas'];"
-            "for (var i = 0; i < selectors.length; i++) {"
-            "  var el = document.querySelector(selectors[i]);"
-            "  if (el) {"
-            "    el.innerHTML = %s;"
-            "    el.dispatchEvent(new Event('input', {bubbles: true}));"
-            "    el.dispatchEvent(new Event('change', {bubbles: true}));"
-            "    try { el.blur(); } catch (e4) {}"
-            "    return selectors[i];"
+            "function findBodyEditor() {"
+            "  var selectors = ['.ProseMirror', '#edui_body_container', '.edui-body-container', '#js_editor', '#js_canvas', '[contenteditable=true]'];"
+            "  var seen = [];"
+            "  var candidates = [];"
+            "  for (var s = 0; s < selectors.length; s++) {"
+            "    var nodes = document.querySelectorAll(selectors[s]);"
+            "    for (var i = 0; i < nodes.length; i++) {"
+            "      var el = nodes[i];"
+            "      if (seen.indexOf(el) >= 0 || !visible(el)) continue;"
+            "      seen.push(el);"
+            "      candidates.push({el: el, score: scoreEditor(el)});"
+            "    }"
+            "  }"
+            "  candidates.sort(function(a, b) { return b.score - a.score; });"
+            "  return candidates.length ? candidates[0].el : null;"
+            "}"
+            "function vueChain(el) {"
+            "  var chain = [];"
+            "  for (var cur = el; cur; cur = cur.parentElement) {"
+            "    if (cur.__vue__) {"
+            "      chain.push(cur.__vue__);"
+            "      if (cur.__vue__.$parent) chain.push(cur.__vue__.$parent);"
+            "      if (cur.__vue__.$root) chain.push(cur.__vue__.$root);"
+            "    }"
+            "  }"
+            "  return chain;"
+            "}"
+            "function normalizedText(el) {"
+            "  return ((el && (el.innerText || el.textContent)) || '').replace(/\\s+/g, '');"
+            "}"
+            "function dispatchEditEvents(el) {"
+            "  el.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertHTML', data: null}));"
+            "  el.dispatchEvent(new Event('change', {bubbles: true}));"
+            "}"
+            "function selectContents(el) {"
+            "  var range = document.createRange();"
+            "  range.selectNodeContents(el);"
+            "  var sel = window.getSelection();"
+            "  sel.removeAllRanges();"
+            "  sel.addRange(range);"
+            "}"
+            "var editor = findBodyEditor();"
+            "if (!editor) return 'NO_BODY_EDITOR';"
+            "var chain = vueChain(editor);"
+            "for (var i = 0; i < chain.length; i++) {"
+            "  var vm = chain[i];"
+            "  if (vm && typeof vm.replaceAllContent === 'function') {"
+            "    try {"
+            "      vm.replaceAllContent(value);"
+            "      if (typeof vm.focus === 'function') { try { vm.focus(); } catch (e1) {} }"
+            "      dispatchEditEvents(editor);"
+            "      if (!expected || normalizedText(editor).indexOf(expected) >= 0) return 'vue.replaceAllContent';"
+            "    } catch (e2) {}"
             "  }"
             "}"
-            "return null; })()" % (safe_html, safe_html)
+            "try {"
+            "  editor.focus();"
+            "  selectContents(editor);"
+            "  var dt = null;"
+            "  try {"
+            "    dt = new DataTransfer();"
+            "    dt.setData('text/html', value);"
+            "    dt.setData('text/plain', value.replace(/<[^>]+>/g, ' '));"
+            "    editor.dispatchEvent(new ClipboardEvent('paste', {bubbles: true, cancelable: true, clipboardData: dt}));"
+            "  } catch (e3) {}"
+            "  if (expected && normalizedText(editor).indexOf(expected) < 0) {"
+            "    selectContents(editor);"
+            "    document.execCommand('insertHTML', false, value);"
+            "  }"
+            "  dispatchEditEvents(editor);"
+            "  if (!expected || normalizedText(editor).indexOf(expected) >= 0) return 'contenteditable.insertHTML';"
+            "} catch (e4) {}"
+            "try {"
+            "  editor.focus();"
+            "  editor.innerHTML = value;"
+            "  dispatchEditEvents(editor);"
+            "  if (!expected || normalizedText(editor).indexOf(expected) >= 0) return 'contenteditable.innerHTML';"
+            "} catch (e5) {}"
+            "return 'BODY_INSERT_UNVERIFIED';"
+            "})(%s)" % payload,
+            as_expr=True,
         )
+        if api_result and str(api_result) not in ("NO_BODY_EDITOR", "BODY_INSERT_UNVERIFIED"):
+            result = str(api_result)
+            print("[填写] 正文注入验证通过 (%s)" % result)
+        else:
+            result = None
+            print("[填写] 正文注入未通过首轮验证 (%s)" % str(api_result))
+    except Exception as e:
+        result = None
+        print("[填写] 正文注入首轮异常: %s" % e)
+
+    # 兼容旧版编辑器：仅在正文编辑器定位失败时使用老选择器兜底。
+    if not result:
+        try:
+            safe_html = json.dumps(html_content)
+            result = page.run_js(
+                "(function() {"
+                "var selectors = ['#edui_body_container', '.edui-body-container', '#js_editor', '#js_canvas'];"
+                "for (var i = 0; i < selectors.length; i++) {"
+                "  var el = document.querySelector(selectors[i]);"
+                "  if (el) {"
+                "    el.focus();"
+                "    el.innerHTML = %s;"
+                "    el.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertHTML'}));"
+                "    el.dispatchEvent(new Event('change', {bubbles: true}));"
+                "    try { el.blur(); } catch (e4) {}"
+                "    return selectors[i];"
+                "  }"
+                "}"
+                "return null; })()" % safe_html
+            )
+        except Exception:
+            result = None
+
     if result:
         print("[填写] 正文已注入到编辑器 (%s)" % result)
     else:
@@ -709,20 +894,125 @@ def fill_body_html(page, html_content):
 
     time.sleep(3)
 
-    # 再次聚焦并失焦，确保编辑器把变更写回内部状态
-    focus_js = (
-        "var editor = document.querySelector('.ProseMirror') ||"
-        "document.querySelector('.edui-body-container') ||"
-        "document.querySelector('[contenteditable=true]');"
-        "if (editor) {"
-        "  editor.focus();"
-        "  editor.dispatchEvent(new Event('input', {bubbles: true}));"
-        "  editor.dispatchEvent(new Event('change', {bubbles: true}));"
-        "  try { editor.blur(); } catch (e) {}"
+    # 再次聚焦并失焦，确保编辑器把变更写回内部状态。
+    page.run_js(
+        "(function(){"
+        "function visible(el){ if(!el || el.offsetParent === null) return false; var r=el.getBoundingClientRect(); return r && r.width>80 && r.height>30; }"
+        "var nodes = document.querySelectorAll('.ProseMirror, #edui_body_container, .edui-body-container, #js_editor, #js_canvas, [contenteditable=true]');"
+        "var best = null, bestScore = -1;"
+        "for (var i=0; i<nodes.length; i++){"
+        "  var el=nodes[i]; if(!visible(el)) continue;"
+        "  var r=el.getBoundingClientRect();"
+        "  var score=r.width*r.height + ((el.classList && el.classList.contains('ProseMirror')) ? 1000000 : 0);"
+        "  if(r.height < 100) score -= 500000;"
+        "  if(score > bestScore){ best=el; bestScore=score; }"
         "}"
+        "if (best) {"
+        "  best.focus();"
+        "  best.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertHTML'}));"
+        "  best.dispatchEvent(new Event('change', {bubbles:true}));"
+        "  try { best.blur(); } catch (e) {}"
+        "}"
+        "})();"
     )
-    page.run_js(focus_js)
     time.sleep(1)
+
+
+def validate_article_fields(page, title, html_content, screenshot_dir):
+    expected_sample = body_sample_from_html(html_content)
+    expected_len = len(normalize_text(html_to_plain_text(html_content)))
+    if not expected_sample or expected_len < 50:
+        return
+
+    raw_state = page.run_js(
+        "(function(expected){"
+        "function visible(el){ if(!el || el.offsetParent === null) return false; var r=el.getBoundingClientRect(); return r && r.width>20 && r.height>10; }"
+        "function norm(text){ return (text || '').replace(/\\s+/g, ''); }"
+        "function contextText(el){"
+        "  var bits=[];"
+        "  for(var cur=el,i=0; cur && i<4; i++,cur=cur.parentElement){"
+        "    if(cur.id) bits.push(cur.id);"
+        "    if(cur.className) bits.push(String(cur.className));"
+        "    if(cur.getAttribute){ bits.push(cur.getAttribute('placeholder') || ''); bits.push(cur.getAttribute('aria-label') || ''); bits.push(cur.getAttribute('data-placeholder') || ''); }"
+        "    bits.push((cur.textContent || '').slice(0,80));"
+        "  }"
+        "  return bits.join(' ');"
+        "}"
+        "function scoreEditor(el){"
+        "  var r=el.getBoundingClientRect();"
+        "  var ctx=contextText(el);"
+        "  var score=r.width*r.height;"
+        "  if(el.classList && el.classList.contains('ProseMirror')) score += 1000000;"
+        "  if(ctx.indexOf('正文')>=0 || ctx.indexOf('请输入正文')>=0) score += 500000;"
+        "  if(ctx.indexOf('标题')>=0 || ctx.indexOf('作者')>=0 || ctx.indexOf('摘要')>=0 || ctx.indexOf('封面')>=0 || ctx.indexOf('留言')>=0 || ctx.indexOf('赞赏')>=0 || ctx.indexOf('原创')>=0) score -= 800000;"
+        "  if(r.height < 100) score -= 500000;"
+        "  return score;"
+        "}"
+        "var titleValues=[];"
+        "var titleSelectors=['textarea.js_title','#title','input#title','textarea#title','input[name=\"title\"]','.title-input input','textarea[placeholder*=\"标题\"]','input[placeholder*=\"标题\"]'];"
+        "for(var i=0;i<titleSelectors.length;i++){"
+        "  var el=document.querySelector(titleSelectors[i]);"
+        "  if(el){ titleValues.push(el.value || el.innerText || el.textContent || ''); }"
+        "}"
+        "var nodes=document.querySelectorAll('.ProseMirror,#edui_body_container,.edui-body-container,#js_editor,#js_canvas,[contenteditable=true]');"
+        "var best=null,bestScore=-999999999;"
+        "for(var j=0;j<nodes.length;j++){"
+        "  var n=nodes[j]; if(!visible(n)) continue;"
+        "  var sc=scoreEditor(n);"
+        "  if(sc>bestScore){ best=n; bestScore=sc; }"
+        "}"
+        "var bodyText=best ? (best.innerText || best.textContent || '') : '';"
+        "var bodyNorm=norm(bodyText);"
+        "var pageText=document.body ? (document.body.innerText || '') : '';"
+        "var m=pageText.match(/正文字数\\s*(\\d+)/);"
+        "return JSON.stringify({"
+        "  titleValues:titleValues,"
+        "  titleNorm:norm(titleValues.join(' ')),"
+        "  bodyNorm:bodyNorm,"
+        "  bodyLen:bodyNorm.length,"
+        "  bodyHasExpected: bodyNorm.indexOf(expected)>=0,"
+        "  titleHasExpected: norm(titleValues.join(' ')).indexOf(expected)>=0,"
+        "  editorScore:bestScore,"
+        "  bodyCounter:m ? parseInt(m[1],10) : null"
+        "});"
+        "})(%s)" % json.dumps(expected_sample),
+        as_expr=True,
+    )
+
+    try:
+        state = json.loads(raw_state or "{}")
+    except Exception:
+        state = {}
+
+    title_values = [v for v in state.get("titleValues", []) if v]
+    title_has_body = bool(state.get("titleHasExpected"))
+    body_has_expected = bool(state.get("bodyHasExpected"))
+    body_len = int(state.get("bodyLen") or 0)
+    body_counter = state.get("bodyCounter")
+
+    if title_has_body:
+        raise_automation_step_error(
+            page,
+            "校验标题正文",
+            screenshot_dir,
+            "检测到正文片段进入了标题输入框，已停止保存。标题值: %s" % " | ".join(title_values[:2]),
+        )
+
+    min_body_len = min(120, max(40, expected_len // 20))
+    counter_ok = isinstance(body_counter, int) and body_counter >= min_body_len
+    if not body_has_expected and body_len < min_body_len and not counter_ok:
+        raise_automation_step_error(
+            page,
+            "校验正文内容",
+            screenshot_dir,
+            "正文没有成功进入正文编辑区（正文区域长度=%d，正文字数=%s），已停止保存。"
+            % (body_len, body_counter if body_counter is not None else "-"),
+        )
+
+    print("[校验] 标题/正文位置校验通过（正文区域长度=%d，正文字数=%s）" % (
+        body_len,
+        body_counter if body_counter is not None else "-",
+    ))
 
 
 def upload_cover(page, cover_path):
@@ -1172,6 +1462,540 @@ def save_draft(page, screenshot_dir="/tmp"):
     print("[保存] 草稿保存成功!")
 
 
+def build_xls_manifest(title, description, image_paths, channel_id=None):
+    return {
+        "kind": "xls-publish",
+        "channel_id": channel_id or "",
+        "title": title,
+        "description": description,
+        "images": [
+            {
+                "source": path,
+                "basename": os.path.basename(path),
+                "sha256": compute_file_sha256(path),
+            }
+            for path in image_paths
+        ],
+    }
+
+
+def _count_xls_thumbnail_candidates(page):
+    try:
+        count = page.run_js(
+            "(function(){"
+            "var imgs = document.querySelectorAll('img');"
+            "var count = 0;"
+            "for (var i = 0; i < imgs.length; i++) {"
+            "  var img = imgs[i];"
+            "  var src = (img.currentSrc || img.src || '');"
+            "  if (src.indexOf('mmbiz') >= 0 || src.indexOf('blob:') === 0 || src.indexOf('data:') === 0) {"
+            "    count++;"
+            "  }"
+            "}"
+            "return count;"
+            "})();",
+            as_expr=True,
+        )
+        return int(count or 0)
+    except Exception:
+        return 0
+
+
+def _has_xls_progress_ratio(page, expected_count):
+    try:
+        return bool(
+            page.run_js(
+                "(function(){"
+                "var body = document.body ? (document.body.innerText || '') : '';"
+                "return body.indexOf('%s') >= 0;"
+                "})();" % ("%d/%d" % (expected_count, expected_count)),
+                as_expr=True,
+            )
+        )
+    except Exception:
+        return False
+
+
+def _hover_text_contains(page, target_text, timeout=5):
+    try:
+        el = page.wait.ele("text:%s" % target_text, timeout=timeout)
+        if el and str(el) != "NoneElement":
+            el.hover()
+            return True
+    except Exception:
+        pass
+
+    try:
+        return bool(
+            page.run_js(
+                "(function(target){"
+                "function visible(el){"
+                "  if(!el) return false;"
+                "  if(el.offsetParent === null) return false;"
+                "  var rect = el.getBoundingClientRect();"
+                "  if(!rect || rect.width <= 0 || rect.height <= 0) return false;"
+                "  return true;"
+                "}"
+                "var targetKey = target.replace(/\\s+/g, '');"
+                "var nodes = document.querySelectorAll('*');"
+                "for (var i = 0; i < nodes.length; i++) {"
+                "  var el = nodes[i];"
+                "  if (!visible(el)) continue;"
+                "  var text = (el.textContent || '').replace(/\\s+/g, ' ').trim();"
+                "  var textKey = text.replace(/\\s+/g, '');"
+                "  if (text.indexOf(target) >= 0 || textKey.indexOf(targetKey) >= 0) {"
+                "    var over = document.createEvent('MouseEvents');"
+                "    over.initEvent('mouseover', true, true);"
+                "    el.dispatchEvent(over);"
+                "    var enter = document.createEvent('MouseEvents');"
+                "    enter.initEvent('mouseenter', true, true);"
+                "    el.dispatchEvent(enter);"
+                "    return true;"
+                "  }"
+                "}"
+                "return false;"
+                "})(%s)"
+                % json.dumps(target_text),
+                as_expr=True,
+            )
+        )
+    except Exception:
+        return False
+
+
+def _click_text_contains(page, target_text, timeout=5):
+    try:
+        el = page.wait.ele("text:%s" % target_text, timeout=timeout)
+        if el and str(el) != "NoneElement":
+            el.click()
+            return True
+    except Exception:
+        pass
+
+    try:
+        return bool(
+            page.run_js(
+                "(function(target){"
+                "function visible(el){"
+                "  if(!el) return false;"
+                "  if(el.offsetParent === null) return false;"
+                "  var rect = el.getBoundingClientRect();"
+                "  if(!rect || rect.width <= 0 || rect.height <= 0) return false;"
+                "  return true;"
+                "}"
+                "var targetKey = target.replace(/\\s+/g, '');"
+                "var nodes = document.querySelectorAll('*');"
+                "for (var i = 0; i < nodes.length; i++) {"
+                "  var el = nodes[i];"
+                "  if (!visible(el)) continue;"
+                "  var text = (el.textContent || '').replace(/\\s+/g, ' ').trim();"
+                "  var textKey = text.replace(/\\s+/g, '');"
+                "  if (text.indexOf(target) >= 0 || textKey.indexOf(targetKey) >= 0) {"
+                "    try { el.click(); } catch (e) {}"
+                "    return true;"
+                "  }"
+                "}"
+                "return false;"
+                "})(%s)"
+                % json.dumps(target_text),
+                as_expr=True,
+            )
+        )
+    except Exception:
+        return False
+
+
+def _fill_text_field_by_keywords(page, field_name, value, selectors, keywords, screenshot_dir):
+    def attempt():
+        for sel in selectors:
+            try:
+                el = page.wait.ele("css:%s" % sel, timeout=4)
+                if el and str(el) != "NoneElement":
+                    el.click()
+                    time.sleep(0.2)
+                    el.input(value, clear=True)
+                    time.sleep(0.5)
+                    print("[填写] %s填写成功 (%s)" % (field_name, sel))
+                    return True
+            except Exception:
+                continue
+
+        try:
+            result = page.run_js(
+                "(function(value){"
+                "function visible(el){"
+                "  if(!el) return false;"
+                "  if(el.offsetParent === null) return false;"
+                "  var rect = el.getBoundingClientRect();"
+                "  if(!rect || rect.width <= 0 || rect.height <= 0) return false;"
+                "  return true;"
+                "}"
+                "function haystack(el){"
+                "  var bits = [];"
+                "  if (el.id) bits.push(el.id);"
+                "  if (el.name) bits.push(el.name);"
+                "  if (el.placeholder) bits.push(el.placeholder);"
+                "  if (el.getAttribute && el.getAttribute('aria-label')) bits.push(el.getAttribute('aria-label'));"
+                "  if (el.labels && el.labels.length) {"
+                "    for (var i = 0; i < el.labels.length; i++) {"
+                "      bits.push(el.labels[i].textContent || '');"
+                "    }"
+                "  }"
+                "  var parent = el.parentElement;"
+                "  if (parent) bits.push(parent.textContent || '');"
+                "  if (parent && parent.parentElement) bits.push(parent.parentElement.textContent || '');"
+                "  return bits.join(' ');"
+                "}"
+                "function setValue(el, text){"
+                "  if (!el) return false;"
+                "  if (el.isContentEditable) {"
+                "    el.focus();"
+                "    el.innerText = text;"
+                "    el.dispatchEvent(new Event('input', {bubbles: true}));"
+                "    el.dispatchEvent(new Event('change', {bubbles: true}));"
+                "    try { el.blur(); } catch (e) {}"
+                "    return true;"
+                "  }"
+                "  el.focus();"
+                "  el.value = text;"
+                "  el.dispatchEvent(new Event('input', {bubbles: true}));"
+                "  el.dispatchEvent(new Event('change', {bubbles: true}));"
+                "  try { el.blur(); } catch (e) {}"
+                "  return true;"
+                "}"
+                "var keywords = %s;"
+                "var els = document.querySelectorAll('input, textarea, [contenteditable=\"true\"]');"
+                "for (var i = 0; i < els.length; i++) {"
+                "  var el = els[i];"
+                "  if (!visible(el)) continue;"
+                "  var text = haystack(el);"
+                "  for (var j = 0; j < keywords.length; j++) {"
+                "    if (text.indexOf(keywords[j]) >= 0) {"
+                "      if (setValue(el, value)) return 'matched:' + keywords[j];"
+                "    }"
+                "  }"
+                "}"
+                "return 'not_found';"
+                "})(%s)"
+                % (json.dumps(keywords), json.dumps(value)),
+                as_expr=True,
+            )
+            if result and str(result).startswith("matched:"):
+                print("[填写] %s填写成功 (%s)" % (field_name, result))
+                return True
+        except Exception:
+            pass
+        return False
+
+    if attempt():
+        return
+
+    raise_automation_step_error(
+        page,
+        "定位%s输入框" % field_name,
+        screenshot_dir,
+        "没找到%s输入框。脚本已停止，请根据截图检查页面结构。" % field_name,
+    )
+
+    if attempt():
+        return
+
+    raise RuntimeError("找不到%s输入框" % field_name)
+
+
+def navigate_to_xls_editor(page, screenshot_dir):
+    print("[编辑] 正在进入小绿书贴图编辑器...")
+
+    time.sleep(3)
+    token = extract_token(page)
+    if not token:
+        time.sleep(5)
+        token = extract_token(page)
+
+    if not token:
+        raise_automation_step_error(
+            page,
+            "获取token",
+            screenshot_dir,
+            "没拿到公众号后台 token，没法进入小绿书贴图编辑页。脚本已停止，请确认登录态或页面结构。",
+        )
+        token = extract_token(page)
+        if not token:
+            raise RuntimeError("无法获取公众号后台 token")
+
+    editor_url = (
+        "https://mp.weixin.qq.com/cgi-bin/appmsg"
+        "?t=media/appmsg_edit_v2&action=edit&isNew=1&type=10&createType=8&token=%s&lang=zh_CN"
+        % token
+    )
+    page.get(editor_url)
+    print("[编辑] 已打开小绿书贴图编辑页")
+    time.sleep(5)
+
+    ready = _is_xls_editor_ready(page)
+    if not ready:
+        raise_automation_step_error(
+            page,
+            "确认小绿书编辑器",
+            screenshot_dir,
+            "已经打开页面，但没看到小绿书贴图编辑器的关键区域。脚本已停止，请根据截图检查页面结构。",
+        )
+        ready = _is_xls_editor_ready(page)
+
+    if not ready:
+        raise RuntimeError("未能进入小绿书贴图编辑器")
+
+    print("[编辑] 已确认进入小绿书贴图编辑器")
+
+
+def _is_xls_editor_ready(page):
+    try:
+        ready = page.run_js(
+            "(function(){"
+            "var body = document.body ? (document.body.innerText || '') : '';"
+            "return body.indexOf('选择或拖拽图片到此处') >= 0 || body.indexOf('本地上传') >= 0 || body.indexOf('保存为草稿') >= 0 || window.location.href.indexOf('appmsg_edit_v2') >= 0;"
+            "})();",
+            as_expr=True,
+        )
+        return bool(ready)
+    except Exception:
+        return False
+
+
+def upload_xls_images(page, image_paths, screenshot_dir):
+    image_paths = resolve_input_files(image_paths, label="图片")
+    baseline = _count_xls_thumbnail_candidates(page)
+    print("[贴图] 当前可见图片候选数: %d" % baseline)
+
+    selector_text = "选择或拖拽图片到此处"
+    upload_text = "本地上传"
+
+    def find_file_input(max_wait=0):
+        tries = max(1, max_wait)
+        for _ in range(tries):
+            inputs = page.eles("css:input[type='file']")
+            if inputs and len(inputs) > 0:
+                return inputs[-1]
+            time.sleep(1)
+        return None
+
+    def attempt_upload():
+        file_input = find_file_input(max_wait=1)
+        if file_input:
+            file_input.input(image_paths)
+            print("[贴图] 已通过现有 file input 注入 %d 张图片" % len(image_paths))
+            return True
+
+        if not _hover_text_contains(page, selector_text, timeout=4):
+            return False
+        time.sleep(1)
+
+        file_input = find_file_input(max_wait=4)
+        if not file_input:
+            if _click_text_contains(page, upload_text, timeout=3):
+                time.sleep(1)
+                file_input = find_file_input(max_wait=6)
+        if not file_input:
+            return False
+
+        file_input.input(image_paths)
+        print("[贴图] 已注入 %d 张图片" % len(image_paths))
+        return True
+
+    if not attempt_upload():
+        raise_automation_step_error(
+            page,
+            "上传贴图图片",
+            screenshot_dir,
+            "没能完成“悬停图片选择器 → 本地上传 → 选择本地图片”的步骤。脚本已停止，请根据截图检查页面结构。",
+        )
+        if not attempt_upload():
+            raise RuntimeError("未能完成图片上传")
+
+    expected_count = baseline + len(image_paths)
+    for i in range(30):
+        current = _count_xls_thumbnail_candidates(page)
+        if current >= expected_count or _has_xls_progress_ratio(page, len(image_paths)):
+            print("[贴图] 图片已正常展示 (%d/%d)" % (current, expected_count))
+            return
+        if i % 5 == 4:
+            print("[贴图] 等待图片正常展示... 当前=%d 目标>=%d" % (current, expected_count))
+        time.sleep(2)
+
+    current = _count_xls_thumbnail_candidates(page)
+    print("[贴图] 图片展示未完全确认，继续执行后续步骤 (%d/%d)" % (current, expected_count))
+
+
+def fill_xls_title(page, title, screenshot_dir):
+    _fill_text_field_by_keywords(
+        page,
+        "标题",
+        title,
+        [
+            "textarea[placeholder*='标题']",
+            "input[placeholder*='标题']",
+            "textarea[name='title']",
+            "input[name='title']",
+            "#title",
+            "textarea.js_title",
+        ],
+        ["标题", "题目", "名称"],
+        screenshot_dir,
+    )
+
+
+def fill_xls_description(page, description, screenshot_dir):
+    _fill_text_field_by_keywords(
+        page,
+        "描述信息",
+        description,
+        [
+            "textarea[placeholder*='描述']",
+            "input[placeholder*='描述']",
+            "textarea[placeholder*='简介']",
+            "textarea[name='description']",
+            "textarea[name='desc']",
+            "#description",
+            "#digest",
+            "textarea#digest",
+        ],
+        ["描述", "描述信息", "简介"],
+        screenshot_dir,
+    )
+
+
+def save_xls_draft(page, screenshot_dir):
+    try:
+        save_draft(page, screenshot_dir=screenshot_dir)
+        return
+    except RuntimeError as exc:
+        raise_automation_step_error(
+            page,
+            "保存草稿",
+            screenshot_dir,
+            "没能直接点到“保存为草稿”。脚本已停止，请根据截图检查保存按钮。",
+        )
+        save_draft(page, screenshot_dir=screenshot_dir)
+
+
+def do_xls_publish(args):
+    from ruyipage import launch
+
+    manifest_tmp = None
+    try:
+        resolved = merge_channel_publish_args(args)
+        user_dir = resolved["user_dir"]
+        final_account = resolved["account"]
+        ensure_dir(user_dir)
+        print("[配置] 用户数据目录: %s" % user_dir)
+        if resolved["channel_id"]:
+            print(
+                "[配置] 发布频道: %s (persona=%s, archive_account=%s)"
+                % (
+                    resolved["channel_id"],
+                    resolved["channel"].get("persona") or "-",
+                    final_account,
+                )
+            )
+
+        image_paths = resolve_input_files(args.images, label="图片")
+        if not image_paths:
+            raise ValueError("请通过 --images 指定至少一张图片")
+
+        article_dir = resolve_article_dir(account=final_account, title=args.title)
+        manifest = build_xls_manifest(
+            title=args.title,
+            description=args.description,
+            image_paths=image_paths,
+            channel_id=resolved.get("channel_id"),
+        )
+
+        if not args.force:
+            import tempfile
+
+            with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+                write_json_file(handle.name, manifest)
+                manifest_tmp = handle.name
+            extra_comparisons = [
+                (src_path, os.path.join(article_dir, os.path.basename(src_path)))
+                for src_path in image_paths
+            ]
+            extra_comparisons.append((manifest_tmp, os.path.join(article_dir, "xls_manifest.json")))
+            if is_probable_duplicate_publish(
+                article_dir,
+                article_html_path=None,
+                extra_comparisons=extra_comparisons,
+            ):
+                print("[跳过] 检测到 10 分钟内相同小绿书贴图已保存到草稿箱，跳过本次重复发布。")
+                print("[跳过] 如需强制重新发布，请追加 --force。")
+                try:
+                    if manifest_tmp and os.path.exists(manifest_tmp):
+                        os.unlink(manifest_tmp)
+                except Exception:
+                    pass
+                return
+
+        print("[启动] 正在启动 Firefox...")
+        page = launch(user_dir=user_dir, headless=False)
+        ss_dir = DEFAULT_SCREENSHOTS_DIR
+        ensure_dir(ss_dir)
+
+        print("[导航] 正在打开微信公众号后台首页...")
+        page.get(WECHAT_MP_URL)
+        time.sleep(3)
+
+        if check_already_logged_in(page):
+            print("[登录] 已登录（使用已保存的登录态）")
+        else:
+            print("[登录] 未登录，请扫描二维码...")
+            wait_for_login(page)
+
+        navigate_to_xls_editor(page, ss_dir)
+        upload_xls_images(page, image_paths, ss_dir)
+        fill_xls_title(page, args.title, ss_dir)
+        fill_xls_description(page, args.description, ss_dir)
+
+        ss_path = os.path.join(ss_dir, "xls_draft_%d.png" % int(time.time()))
+        try:
+            page.screenshot(ss_path)
+            print("[截图] 操作完成截图: %s" % ss_path)
+        except Exception as e:
+            print("[警告] 截图失败: %s" % e)
+
+        save_xls_draft(page, screenshot_dir=ss_dir)
+
+        print("\n" + "=" * 50)
+        print("小绿书贴图已保存到草稿箱。")
+        print("用户目录: %s" % user_dir)
+        print("[归档] 产物目录: %s" % article_dir)
+
+        if has_current_artifacts(article_dir):
+            new_ver, moved = archive_current_version(article_dir)
+            print("[归档] 旧版已归档到 versions/v%d/ (%s)" % (new_ver, ", ".join(moved) if moved else "无文件"))
+
+        copy_artifacts(
+            article_dir,
+            article_html_path=None,
+            cover_path=None,
+            final_md_path=None,
+            extra_sources=image_paths,
+        )
+        write_json_file(os.path.join(article_dir, "xls_manifest.json"), manifest)
+        print("[归档] 已保存: %s" % ", ".join([os.path.basename(p) for p in image_paths]))
+
+        record_publish(article_dir, args.title, final_account, "小绿书贴图保存到草稿箱")
+        print("[归档] publish.json 已更新")
+
+        cleanup_old_versions(article_dir)
+        print("=" * 50)
+    finally:
+        if manifest_tmp and os.path.exists(manifest_tmp):
+            try:
+                os.unlink(manifest_tmp)
+            except Exception:
+                pass
+
+
 # ── 主流程 ──
 
 def do_publish(args):
@@ -1249,9 +2073,12 @@ def do_publish(args):
         # 8. 填写摘要
         fill_digest(page, args.digest or "")
 
-        # 9. 截图
+        # 9. 保存前校验，避免正文误进标题/封面标题后仍然保存草稿
         ss_dir = DEFAULT_SCREENSHOTS_DIR
         ensure_dir(ss_dir)
+        validate_article_fields(page, args.title, article_html, ss_dir)
+
+        # 10. 截图
         ss_path = os.path.join(ss_dir, "draft_%d.png" % int(time.time()))
         try:
             page.screenshot(ss_path)
@@ -1259,7 +2086,7 @@ def do_publish(args):
         except Exception as e:
             print("[警告] 截图失败: %s" % e)
 
-        # 10. 保存到草稿箱
+        # 11. 保存到草稿箱
         save_draft(page, screenshot_dir=ss_dir)
 
         print("\n" + "=" * 50)
@@ -1270,10 +2097,7 @@ def do_publish(args):
         print("[归档] 产物目录: %s" % article_dir)
 
         # 1. 备份当前版本（如果已有旧产物）
-        has_existing = (
-            os.path.exists(os.path.join(article_dir, "article.html"))
-            or os.path.exists(os.path.join(article_dir, "final.md"))
-        )
+        has_existing = has_current_artifacts(article_dir)
         if has_existing:
             new_ver, moved = archive_current_version(article_dir)
             print("[归档] 旧版已归档到 versions/v%d/ (%s)" % (new_ver, ", ".join(moved) if moved else "无文件"))
@@ -1460,6 +2284,15 @@ def build_parser():
     pub.add_argument("--user-dir", "-u", default=None, help="Firefox 用户数据目录")
     pub.add_argument("--force", action="store_true", help="忽略短时间重复发布保护，强制再次发布")
 
+    xls = subparsers.add_parser("xls-publish", help="发布小绿书贴图到草稿箱")
+    xls.add_argument("--images", "-i", nargs="+", required=True, help="小绿书贴图图片路径，支持一次传多张")
+    xls.add_argument("--title", "-t", required=True, help="贴图标题")
+    xls.add_argument("--description", "-d", required=True, help="贴图描述信息")
+    xls.add_argument("--channel", default=None, help="频道标识（推荐；从 channels.yaml 自动解析 profile + persona + archive_account）")
+    xls.add_argument("--account", default=None, help="归档账号标识（兼容旧用法；推荐改用 --channel）")
+    xls.add_argument("--user-dir", "-u", default=None, help="Firefox 用户数据目录")
+    xls.add_argument("--force", action="store_true", help="忽略短时间重复发布保护，强制再次发布")
+
     subparsers.add_parser("list-profiles", help="列出已有的账号 profile")
     subparsers.add_parser("list-channels", help="列出 channels.yaml 里的频道映射")
 
@@ -1487,6 +2320,8 @@ def main():
 
     if args.command == "publish":
         do_publish(args)
+    elif args.command == "xls-publish":
+        do_xls_publish(args)
     elif args.command == "list-profiles":
         do_list_profiles(args)
     elif args.command == "list-channels":

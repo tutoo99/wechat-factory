@@ -562,6 +562,10 @@ python3 wechat-article-pipeline/scripts/framework_flow.py \
    - 摘要
    - 导语
    - 封面主标题 / 副标题
+15. 发布分支：
+   - 微信公众号长文：`final.md` → `article.html` → `cover.jpg` → `publish_wechat.py publish`
+   - 小绿书贴图：准备多张图片后，直接用 `publish_wechat.py xls-publish --images ... --title ... --description ...`
+   - 小绿书分支仍必须在正文完成、降 AI 味和违禁词扫描之后执行；标题和描述必须显式传参，不从 `final.md` 自动推断
 
 ### 场景B：已有初稿
 

@@ -32,6 +32,7 @@
 """
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -187,6 +188,17 @@ def build_writing_brief(
 
 
 STRATEGY_MATERIAL_ENGINE_ROOT = Path("/Users/naipan/.hermes/skills/strategy-material-engine")
+TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\[[0-?]*[ -/]*[@-~]"
+    r"|\x1b\][^\x07]*(?:\x07|\x1b\\)"
+    r"|\x1b[@-Z\\-_]"
+)
+CAPTURED_SUBPROCESS_ENV = {
+    "TERM": "dumb",
+    "NO_COLOR": "1",
+    "PYTHONUNBUFFERED": "1",
+    "TQDM_DISABLE": "1",
+}
 
 ANGLE_ORDER = ["story", "method", "insight", "mistake", "cost", "turning_point"]
 ANGLE_HINTS = {
@@ -294,6 +306,24 @@ SEARCH_GUARD_COMPOUND_SUFFIXES = [
 
 def _compact_text(text: str) -> str:
     return re.sub(r"\s+", " ", str(text or "")).strip()
+
+
+def _strip_terminal_control_sequences(text: str | None) -> str | None:
+    if text is None:
+        return None
+    return TERMINAL_CONTROL_RE.sub("", str(text))
+
+
+def run_captured_subprocess(cmd: list[str], **kwargs):
+    env = os.environ.copy()
+    env.update(CAPTURED_SUBPROCESS_ENV)
+    if kwargs.get("env"):
+        env.update(kwargs["env"])
+    kwargs["env"] = env
+    result = subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    result.stdout = _strip_terminal_control_sequences(result.stdout) or ""
+    result.stderr = _strip_terminal_control_sequences(result.stderr) or ""
+    return result
 
 
 def _clean_search_guard_term(term: str) -> str:
@@ -608,9 +638,7 @@ def fetch_materials_for_brief(
             if prefer_type:
                 cmd.extend(["--prefer-type", prefer_type])
             
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60,
-            )
+            result = run_captured_subprocess(cmd, timeout=60)
             if result.returncode != 0:
                 continue
 
@@ -1088,7 +1116,7 @@ def fetch_materials_for_outline_sections(
                     "--reranker",
                     "none",
                 ]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+                result = run_captured_subprocess(cmd, timeout=timeout)
                 if result.returncode != 0:
                     return {
                         job["id"]: {
@@ -1143,7 +1171,7 @@ def fetch_materials_for_outline_sections(
                 cmd.extend(["--prefer-type", str(job["prefer_type"])])
 
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                result = run_captured_subprocess(cmd, timeout=60)
             except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as exc:
                 rows[job["id"]] = {"id": job["id"], "error": str(exc), "results": []}
                 continue

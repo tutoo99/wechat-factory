@@ -1,7 +1,7 @@
 ---
 name: wechat-publisher
 description: >
-  微信公众号发布链路工具：Markdown → 公众号HTML排版 → 封面图生成 → ruyiPage自动发布到草稿箱。
+  微信公众号发布链路工具：Markdown → 公众号HTML排版 → 封面图生成 → ruyiPage自动发布到草稿箱；也支持小绿书贴图发布到草稿箱。
   TRIGGER when: user asks to "排版" "发布" "publish" "推送到草稿箱" "转HTML" "生成封面";
   user says "把文章发到公众号" "排版成公众号格式" "生成封面图" "publish to wechat draft";
   also trigger when wechat-article-pipeline completes final.md and needs post-processing.
@@ -38,7 +38,7 @@ python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/publish_wechat.
 python3 ~/.hermes/skills/wechat-factory/wechat-publisher/scripts/publish_wechat.py list-channels
 ```
 
-## 三个发布节点
+## 四个发布节点
 
 ### 节点1：Markdown → 公众号HTML排版
 
@@ -166,6 +166,29 @@ python3 $PUBLISHER create-profile --slug auntie --display-name "情感号"
 ```
 
 **多账号设计**：每个公众号一个 profile 目录（保存独立的登录cookie），20个号 = 20个 profile，切换目录即切换账号。
+
+### 节点4：小绿书贴图发布到草稿箱
+
+文章完成、降 AI 味和违规扫描通过后，如果这次不发公众号长文，而是发“小绿书贴图”，走 `xls-publish`：
+
+```bash
+PUBLISHER="~/.hermes/skills/wechat-factory/wechat-publisher/scripts/publish_wechat.py"
+
+python3 $PUBLISHER xls-publish \
+  --channel tech \
+  --images /path/to/01.jpg /path/to/02.jpg /path/to/03.jpg \
+  --title "贴图标题" \
+  --description "描述信息"
+```
+
+流程规则：
+
+- 仍使用 ruyiPage 和当前 channel 绑定的 Firefox profile，不走微信 API。
+- 脚本先打开微信公众号后台首页，复用登录态并动态提取 token，再进入小绿书贴图编辑页；不要写死旧 URL 里的 token。
+- 图片通过 `--images` 显式传入，支持一次传多张；标题和描述必须通过 `--title` / `--description` 显式传入。
+- 自动化步骤：悬停“选择或拖拽图片到此处” → 点击“本地上传” → 注入多张图片 → 等待图片展示 → 填标题 → 填描述 → 保存为草稿。
+- 如果正式脚本定位不到元素，会保存截图、打印当前步骤和 URL，然后失败退出；不要在脚本里等待人工输入，也不要反复打开网址。
+- 发布成功后会归档本次图片和 `xls_manifest.json`，并在 `publish.json` 记录“小绿书贴图保存到草稿箱”。
 
 ## 产物归档规范（重要）
 
@@ -556,4 +579,4 @@ page.get(editor_url)
 - **emotion-opinion-humanizer**：输出 final.md → 本 Skill 接收
 - **wechat-topic-spy**：提供选题 → pipeline → humanizer → 本 Skill
 
-完整流水线：选题 → 写稿 → 降AI味 → 排版 → 封面 → 发布草稿箱
+完整流水线：选题 → 写稿 → 降AI味 → 违规扫描 → 发布分支（长文排版/封面/草稿箱，或小绿书贴图/草稿箱）
